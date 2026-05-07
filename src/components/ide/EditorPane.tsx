@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight, Eye, FileCode2, Lock } from "lucide-react";
-import { CodeEditor } from "@/features/editor/CodeEditor";
+import { CodeEditor, type EditorScrollPosition } from "@/features/editor/CodeEditor";
 import { MarkdownPreview } from "@/features/preview/MarkdownPreview";
 import type { EditorMode, WorkspaceFile } from "@/features/workspace/types";
 
@@ -11,9 +11,19 @@ interface EditorPaneProps {
   mode: EditorMode;
   onModeChange: (mode: EditorMode) => void;
   onChange: (value: string) => void;
+  getScrollPosition: (fileId: string) => EditorScrollPosition;
+  onScrollPositionChange: (fileId: string, position: EditorScrollPosition) => void;
 }
 
-export function EditorPane({ file, value, mode, onModeChange, onChange }: EditorPaneProps) {
+export function EditorPane({
+  file,
+  value,
+  mode,
+  onModeChange,
+  onChange,
+  getScrollPosition,
+  onScrollPositionChange,
+}: EditorPaneProps) {
   const canPreview = file.renderer === "markdown";
   const breadcrumbSegments = file.path.split("/");
 
@@ -64,10 +74,13 @@ export function EditorPane({ file, value, mode, onModeChange, onChange }: Editor
           <MarkdownPreview markdown={value} />
         ) : (
           <CodeEditor
+            fileId={file.id}
             value={value}
             language={file.language}
             readOnly={!file.editable}
             onChange={onChange}
+            getScrollPosition={getScrollPosition}
+            onScrollPositionChange={onScrollPositionChange}
           />
         )}
       </div>

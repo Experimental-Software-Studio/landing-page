@@ -22,6 +22,7 @@
     "@codemirror/view": "latest",
     "@lezer/highlight": "latest",
     "@peoplesgrocers/seti-ui-file-icons": "^1.11.3",
+    "@replit/codemirror-indentation-markers": "^6.5.3",
     "@uiw/codemirror-theme-vscode": "^4.25.9",
     "clsx": "latest",
     "lucide-react": "latest",

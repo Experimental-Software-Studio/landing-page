@@ -422,10 +422,15 @@ button {
 }
 
 .editor-host {
+  display: flex;
+  min-width: 0;
   overflow: hidden;
 }
 
 .cm-editor {
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: 13px;
 }

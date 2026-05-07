@@ -35,6 +35,9 @@ importers:
       '@peoplesgrocers/seti-ui-file-icons':
         specifier: ^1.11.3
         version: 1.11.3
+      '@replit/codemirror-indentation-markers':
+        specifier: ^6.5.3
+        version: 6.5.3(@codemirror/language@6.12.3)(@codemirror/state@6.6.0)(@codemirror/view@6.42.0)
       '@uiw/codemirror-theme-vscode':
         specifier: ^4.25.9
         version: 4.25.9(@codemirror/language@6.12.3)(@codemirror/state@6.6.0)(@codemirror/view@6.42.0)
@@ -782,6 +785,13 @@ packages:
 
   '@peoplesgrocers/seti-ui-file-icons@1.11.3':
     resolution: {integrity: sha512-+WZ8Ne9Pf7XbugC2v01PP9ZSpEbjbkFELyqIG3EbTZLL5xKXT/jzqvKWsEpO/fHXjBRieURgcAbxk7twhj5Nyw==}
+
+  '@replit/codemirror-indentation-markers@6.5.3':
+    resolution: {integrity: sha512-hL5Sfvw3C1vgg7GolLe/uxX5T3tmgOA3ZzqlMv47zjU1ON51pzNWiVbS22oh6crYhtVhv8b3gdXwoYp++2ilHw==}
+    peerDependencies:
+      '@codemirror/language': ^6.0.0
+      '@codemirror/state': ^6.0.0
+      '@codemirror/view': ^6.0.0
 
   '@rolldown/binding-android-arm64@1.0.0-rc.17':
     resolution: {integrity: sha512-s70pVGhw4zqGeFnXWvAzJDlvxhlRollagdCCKRgOsgUOH3N1l0LIxf83AtGzmb5SiVM4Hjl5HyarMRfdfj3DaQ==}
@@ -3665,6 +3675,12 @@ snapshots:
   '@oxc-project/types@0.127.0': {}
 
   '@peoplesgrocers/seti-ui-file-icons@1.11.3': {}
+
+  '@replit/codemirror-indentation-markers@6.5.3(@codemirror/language@6.12.3)(@codemirror/state@6.6.0)(@codemirror/view@6.42.0)':
+    dependencies:
+      '@codemirror/language': 6.12.3
+      '@codemirror/state': 6.6.0
+      '@codemirror/view': 6.42.0
 
   '@rolldown/binding-android-arm64@1.0.0-rc.17':
     optional: true
