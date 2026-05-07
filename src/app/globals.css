@@ -269,8 +269,14 @@ button {
   display: flex;
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
   border-bottom: 1px solid var(--border);
   background: var(--panel-2);
+}
+
+.tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -282,6 +288,7 @@ button {
   height: 36px;
   padding: 0 9px 0 12px;
   border: 0;
+  border-top: 1px solid transparent;
   border-right: 1px solid var(--border);
   background: #2d2d2d;
   color: #bdbdbd;
@@ -289,15 +296,21 @@ button {
 }
 
 .tab.active {
-  border-top: 1px solid var(--accent-2);
+  border-top-color: var(--accent-2);
   background: var(--bg);
   color: #ffffff;
 }
 
-.tab span:first-of-type {
+.tab-label {
+  min-width: 0;
   overflow: hidden;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tab.preview .tab-label {
+  font-style: italic;
 }
 
 .tab-close {

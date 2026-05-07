@@ -19,13 +19,31 @@ const repoFile: WorkspaceFile = {
 };
 
 describe("workspaceReducer", () => {
-  it("opens files and tracks active tabs", () => {
+  it("single-click opens files as a preview tab and replaces the existing preview", () => {
     const state = createInitialWorkspaceState([repoFile]);
     const next = workspaceReducer(state, { type: "openFile", fileId: repoFile.id });
 
     expect(next.activeFileId).toBe(repoFile.id);
-    expect(next.openTabs).toContain("content-readme");
-    expect(next.openTabs).toContain(repoFile.id);
+    expect(next.openTabs).toEqual([repoFile.id]);
+    expect(next.previewTabId).toBe(repoFile.id);
+  });
+
+  it("double-click pins a preview tab so later previews open separately", () => {
+    const state = createInitialWorkspaceState([repoFile]);
+    const pinned = workspaceReducer(state, { type: "pinFile", fileId: "content-readme" });
+    const next = workspaceReducer(pinned, { type: "openFile", fileId: repoFile.id });
+
+    expect(next.openTabs).toEqual(["content-readme", repoFile.id]);
+    expect(next.previewTabId).toBe(repoFile.id);
+  });
+
+  it("double-click pins the active preview tab", () => {
+    const state = createInitialWorkspaceState([repoFile]);
+    const preview = workspaceReducer(state, { type: "openFile", fileId: repoFile.id });
+    const pinned = workspaceReducer(preview, { type: "pinFile", fileId: repoFile.id });
+
+    expect(pinned.openTabs).toEqual([repoFile.id]);
+    expect(pinned.previewTabId).toBeNull();
   });
 
   it("switches mode per file", () => {
@@ -69,5 +87,6 @@ describe("workspaceReducer", () => {
     });
 
     expect(next.openTabs).toEqual(["content-readme"]);
+    expect(next.previewTabId).toBe("content-readme");
   });
 });

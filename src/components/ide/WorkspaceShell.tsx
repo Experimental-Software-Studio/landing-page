@@ -41,12 +41,15 @@ export function WorkspaceShell() {
           tree={state.tree}
           activeFileId={state.activeFileId}
           onSelectFile={(fileId) => dispatch({ type: "openFile", fileId })}
+          onPinFile={(fileId) => dispatch({ type: "pinFile", fileId })}
         />
         <div className="editor-workbench">
           <TabBar
             tabs={openTabs}
             activeFileId={state.activeFileId}
+            previewTabId={state.previewTabId}
             onSelectTab={(fileId) => dispatch({ type: "openFile", fileId })}
+            onPinTab={(fileId) => dispatch({ type: "pinFile", fileId })}
             onCloseTab={(fileId) => dispatch({ type: "closeTab", fileId })}
           />
           <EditorPane

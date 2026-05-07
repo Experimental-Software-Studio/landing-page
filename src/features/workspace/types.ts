@@ -36,6 +36,7 @@ export interface WorkspaceState {
   tree: WorkspaceFolder;
   filesById: Record<string, WorkspaceFile>;
   openTabs: string[];
+  previewTabId: string | null;
   activeFileId: string;
   editorModes: Record<string, EditorMode>;
   editedContents: Record<string, string>;
@@ -43,6 +44,7 @@ export interface WorkspaceState {
 
 export type WorkspaceAction =
   | { type: "openFile"; fileId: string }
+  | { type: "pinFile"; fileId: string }
   | { type: "closeTab"; fileId: string }
   | { type: "setMode"; fileId: string; mode: EditorMode }
   | { type: "updateContent"; fileId: string; content: string };

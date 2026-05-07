@@ -16,6 +16,7 @@ describe("FileExplorer", () => {
         tree={state.tree}
         activeFileId={state.activeFileId}
         onSelectFile={onSelectFile}
+        onPinFile={vi.fn()}
       />,
     );
 
@@ -37,6 +38,7 @@ describe("FileExplorer", () => {
         tree={tree}
         activeFileId={state.activeFileId}
         onSelectFile={onSelectFile}
+        onPinFile={vi.fn()}
       />,
     );
 
@@ -47,5 +49,24 @@ describe("FileExplorer", () => {
     await user.click(screen.getByRole("button", { name: "src" }));
 
     expect(screen.queryByRole("button", { name: "globals.css" })).not.toBeInTheDocument();
+  });
+
+  it("pins files on double click", async () => {
+    const user = userEvent.setup();
+    const state = createInitialWorkspaceState();
+    const onPinFile = vi.fn();
+
+    render(
+      <FileExplorer
+        tree={state.tree}
+        activeFileId={state.activeFileId}
+        onSelectFile={vi.fn()}
+        onPinFile={onPinFile}
+      />,
+    );
+
+    await user.dblClick(screen.getByRole("button", { name: /philosophy.md/i }));
+
+    expect(onPinFile).toHaveBeenCalledWith("content-philosophy");
   });
 });

@@ -18,6 +18,7 @@ export function createInitialWorkspaceState(
     tree: buildWorkspaceTree(files),
     filesById,
     openTabs: [defaultFileId],
+    previewTabId: defaultFileId,
     activeFileId: defaultFileId,
     editorModes,
     editedContents: {},
@@ -38,12 +39,39 @@ export function workspaceReducer(
         return state;
       }
 
+      if (state.openTabs.includes(action.fileId)) {
+        return {
+          ...state,
+          activeFileId: action.fileId,
+        };
+      }
+
+      const openTabs = state.previewTabId
+        ? state.openTabs.map((fileId) =>
+            fileId === state.previewTabId ? action.fileId : fileId,
+          )
+        : [...state.openTabs, action.fileId];
+
+      return {
+        ...state,
+        activeFileId: action.fileId,
+        openTabs,
+        previewTabId: action.fileId,
+      };
+    }
+
+    case "pinFile": {
+      if (!state.filesById[action.fileId]) {
+        return state;
+      }
+
       return {
         ...state,
         activeFileId: action.fileId,
         openTabs: state.openTabs.includes(action.fileId)
           ? state.openTabs
           : [...state.openTabs, action.fileId],
+        previewTabId: state.previewTabId === action.fileId ? null : state.previewTabId,
       };
     }
 
@@ -60,6 +88,7 @@ export function workspaceReducer(
       return {
         ...state,
         openTabs: nextTabs,
+        previewTabId: state.previewTabId === action.fileId ? null : state.previewTabId,
         activeFileId,
       };
     }
