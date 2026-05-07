@@ -34,6 +34,51 @@ button {
   font: inherit;
 }
 
+.ide-shell::-webkit-scrollbar,
+.ide-shell *::-webkit-scrollbar {
+  width: 20px;
+  height: 20px;
+}
+
+.ide-shell::-webkit-scrollbar-track,
+.ide-shell *::-webkit-scrollbar-track {
+  border-radius: 0;
+  background: transparent;
+}
+
+.ide-shell::-webkit-scrollbar-thumb,
+.ide-shell *::-webkit-scrollbar-thumb {
+  min-height: 42px;
+  border: 4px solid transparent;
+  border-radius: 0 !important;
+  background: rgb(121 121 121 / 0.34);
+  background-clip: content-box;
+}
+
+.ide-shell::-webkit-scrollbar-button,
+.ide-shell *::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.ide-shell::-webkit-scrollbar-thumb:hover,
+.ide-shell *::-webkit-scrollbar-thumb:hover {
+  background: rgb(121 121 121 / 0.55);
+  background-clip: content-box;
+}
+
+.ide-shell::-webkit-scrollbar-thumb:active,
+.ide-shell *::-webkit-scrollbar-thumb:active {
+  background: rgb(121 121 121 / 0.68);
+  background-clip: content-box;
+}
+
+.ide-shell::-webkit-scrollbar-corner,
+.ide-shell *::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .ide-shell {
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr) 23px;
