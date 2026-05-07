@@ -437,13 +437,19 @@ button {
 
 .cm-gutters {
   padding-left: 16px;
-  padding-right: 12px;
 }
 
 .cm-scroller {
   box-sizing: border-box;
   line-height: 1.65;
-  padding-top: 24px;
+}
+
+.ide-shell .cm-editor .cm-foldPlaceholder {
+  border: 0 !important;
+  background: transparent !important;
+  color: #cccccc !important;
+  margin: 0 3px;
+  padding: 0;
 }
 
 .markdown-preview {

@@ -36,6 +36,7 @@ function languageForPath(path: string) {
   if (extension === "json") return "json";
   if (extension === "css") return "css";
   if (extension === "html") return "html";
+  if (extension === "yaml" || extension === "yml") return "yaml";
 
   return "text";
 }

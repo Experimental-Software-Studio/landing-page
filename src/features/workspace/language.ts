@@ -11,6 +11,8 @@ const languageByExtension: Record<string, WorkspaceLanguage> = {
   mjs: "javascript",
   ts: "typescript",
   tsx: "typescript",
+  yaml: "yaml",
+  yml: "yaml",
 };
 
 export function getExtension(path: string) {

@@ -1,11 +1,13 @@
 "use client";
 
+import { foldEffect, foldGutter, foldedRanges, unfoldEffect } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { WorkspaceLanguage } from "@/features/workspace/types";
+import { bracketPairColors } from "./bracketPairColors";
 import { getCodeMirrorLanguage } from "./languageExtensions";
 
 interface CodeEditorProps {
@@ -16,6 +18,8 @@ interface CodeEditorProps {
   onChange: (value: string) => void;
   getScrollPosition: (fileId: string) => EditorScrollPosition;
   onScrollPositionChange: (fileId: string, position: EditorScrollPosition) => void;
+  getFoldRanges: (fileId: string) => EditorFoldRange[];
+  onFoldRangesChange: (fileId: string, ranges: EditorFoldRange[]) => void;
 }
 
 export interface EditorScrollPosition {
@@ -23,6 +27,11 @@ export interface EditorScrollPosition {
   left: number;
   top: number;
   yMargin?: number;
+}
+
+export interface EditorFoldRange {
+  from: number;
+  to: number;
 }
 
 const horizontalScrollTheme = EditorView.theme({
@@ -34,6 +43,53 @@ const horizontalScrollTheme = EditorView.theme({
 
 const restoreScrollMeasureKey = {};
 
+const foldingTheme = EditorView.baseTheme({
+  ".cm-foldGutter": {
+    width: "16px",
+  },
+  ".cm-foldGutter .cm-gutterElement": {
+    color: "#c5c5c5",
+    cursor: "pointer",
+    opacity: "0",
+    transition: "opacity 120ms ease",
+  },
+  ".cm-gutters:hover .cm-foldGutter .cm-gutterElement, .cm-foldGutter .cm-gutterElement:hover": {
+    opacity: "1",
+  },
+  ".cm-foldGutter .cm-gutterElement:has(.is-folded)": {
+    opacity: "1",
+  },
+  ".cm-fold-chevron": {
+    alignItems: "center",
+    display: "inline-flex",
+    height: "100%",
+    justifyContent: "center",
+    width: "14px",
+  },
+  ".cm-fold-chevron svg": {
+    display: "block",
+  },
+  ".cm-foldPlaceholder": {
+    backgroundColor: "transparent",
+    border: "0",
+    borderRadius: "2px",
+    color: "#cccccc",
+    margin: "0 3px",
+    padding: "0",
+  },
+});
+
+function foldMarker(open: boolean) {
+  const marker = document.createElement("span");
+  marker.className = open ? "cm-fold-chevron" : "cm-fold-chevron is-folded";
+  marker.setAttribute("aria-hidden", "true");
+  marker.innerHTML = open
+    ? '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M3.5 5.25 7 8.75l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M5.25 3.5 8.75 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  return marker;
+}
+
 function getEditorScrollPosition(view: EditorView): EditorScrollPosition {
   const top = view.scrollDOM.scrollTop;
   const block = view.lineBlockAtHeight(top);
@@ -44,6 +100,32 @@ function getEditorScrollPosition(view: EditorView): EditorScrollPosition {
     top,
     yMargin: block.top - top,
   };
+}
+
+function getEditorFoldRanges(view: EditorView): EditorFoldRange[] {
+  const ranges: EditorFoldRange[] = [];
+
+  foldedRanges(view.state).between(0, view.state.doc.length, (from, to) => {
+    ranges.push({ from, to });
+  });
+
+  return ranges;
+}
+
+function getValidFoldRanges(view: EditorView, ranges: EditorFoldRange[]) {
+  return ranges.filter(({ from, to }) => from < to && to <= view.state.doc.length);
+}
+
+function restoreEditorFoldRanges(view: EditorView, ranges: EditorFoldRange[]) {
+  const currentRanges = getEditorFoldRanges(view);
+  const effects = [
+    ...currentRanges.map((range) => unfoldEffect.of(range)),
+    ...getValidFoldRanges(view, ranges).map((range) => foldEffect.of(range)),
+  ];
+
+  if (effects.length > 0) {
+    view.dispatch({ effects });
+  }
 }
 
 function restoreEditorScroll(
@@ -92,14 +174,19 @@ export function CodeEditor({
   onChange,
   getScrollPosition,
   onScrollPositionChange,
+  getFoldRanges,
+  onFoldRangesChange,
 }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const getScrollPositionRef = useRef(getScrollPosition);
   const onScrollPositionChangeRef = useRef(onScrollPositionChange);
+  const getFoldRangesRef = useRef(getFoldRanges);
+  const onFoldRangesChangeRef = useRef(onFoldRangesChange);
   const fileIdRef = useRef(fileId);
   const suppressScrollSaveRef = useRef(false);
+  const suppressFoldSaveRef = useRef(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -113,12 +200,21 @@ export function CodeEditor({
     onScrollPositionChangeRef.current = onScrollPositionChange;
   }, [onScrollPositionChange]);
 
+  useEffect(() => {
+    getFoldRangesRef.current = getFoldRanges;
+  }, [getFoldRanges]);
+
+  useEffect(() => {
+    onFoldRangesChangeRef.current = onFoldRangesChange;
+  }, [onFoldRangesChange]);
+
   useLayoutEffect(() => {
     const view = viewRef.current;
     const previousFileId = fileIdRef.current;
 
     if (view && previousFileId !== fileId) {
       onScrollPositionChangeRef.current(previousFileId, getEditorScrollPosition(view));
+      onFoldRangesChangeRef.current(previousFileId, getEditorFoldRanges(view));
     }
 
     fileIdRef.current = fileId;
@@ -137,6 +233,10 @@ export function CodeEditor({
         doc: "",
         extensions: [
           lineNumbers(),
+          foldGutter({
+            markerDOM: foldMarker,
+          }),
+          foldingTheme,
           vscodeDark,
           indentationMarkers({
             highlightActiveBlock: false,
@@ -148,6 +248,7 @@ export function CodeEditor({
               activeDark: "#707070",
             },
           }),
+          language === "markdown" ? [] : bracketPairColors(),
           getCodeMirrorLanguage(language),
           EditorState.readOnly.of(readOnly),
           EditorView.editable.of(!readOnly),
@@ -155,6 +256,10 @@ export function CodeEditor({
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !readOnly) {
               onChangeRef.current(update.state.doc.toString());
+            }
+
+            if (!suppressFoldSaveRef.current) {
+              onFoldRangesChangeRef.current(fileIdRef.current, getEditorFoldRanges(update.view));
             }
           }),
         ],
@@ -174,6 +279,7 @@ export function CodeEditor({
 
     return () => {
       saveScrollPosition();
+      onFoldRangesChangeRef.current(fileIdRef.current, getEditorFoldRanges(view));
       view.scrollDOM.removeEventListener("scroll", saveScrollPosition);
       view.destroy();
       viewRef.current = null;
@@ -191,11 +297,39 @@ export function CodeEditor({
 
     if (current !== value) {
       suppressScrollSaveRef.current = true;
+      suppressFoldSaveRef.current = true;
       view.dispatch({
         changes: { from: 0, to: current.length, insert: value },
       });
+
+      const releaseFoldSave = window.setTimeout(() => {
+        suppressFoldSaveRef.current = false;
+      }, 120);
+
+      return () => {
+        window.clearTimeout(releaseFoldSave);
+      };
     }
   }, [value]);
+
+  useLayoutEffect(() => {
+    const view = viewRef.current;
+
+    if (!view) {
+      return;
+    }
+
+    suppressFoldSaveRef.current = true;
+    restoreEditorFoldRanges(view, getFoldRangesRef.current(fileId));
+
+    const releaseFoldSave = window.setTimeout(() => {
+      suppressFoldSaveRef.current = false;
+    }, 120);
+
+    return () => {
+      window.clearTimeout(releaseFoldSave);
+    };
+  }, [fileId]);
 
   useLayoutEffect(() => {
     const view = viewRef.current;

@@ -7,6 +7,7 @@ export type WorkspaceLanguage =
   | "json"
   | "css"
   | "html"
+  | "yaml"
   | "text";
 
 export type EditorMode = "code" | "preview";

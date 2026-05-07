@@ -7,7 +7,7 @@ import { EditorPane } from "./EditorPane";
 import { FileExplorer } from "./FileExplorer";
 import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
-import type { EditorScrollPosition } from "@/features/editor/CodeEditor";
+import type { EditorFoldRange, EditorScrollPosition } from "@/features/editor/CodeEditor";
 import {
   createInitialWorkspaceState,
   getFileContent,
@@ -19,6 +19,7 @@ export function WorkspaceShell() {
     createInitialWorkspaceState(),
   );
   const scrollPositionsRef = useRef<Record<string, EditorScrollPosition>>({});
+  const foldRangesRef = useRef<Record<string, EditorFoldRange[]>>({});
 
   const activeFile = state.filesById[state.activeFileId];
   const openTabs = state.openTabs.map((fileId) => state.filesById[fileId]).filter(Boolean);
@@ -28,6 +29,7 @@ export function WorkspaceShell() {
     (fileId: string) => scrollPositionsRef.current[fileId] ?? { left: 0, top: 0 },
     [],
   );
+  const getFoldRanges = useCallback((fileId: string) => foldRangesRef.current[fileId] ?? [], []);
 
   return (
     <main className="ide-shell">
@@ -75,6 +77,10 @@ export function WorkspaceShell() {
             getScrollPosition={getScrollPosition}
             onScrollPositionChange={(fileId, position) => {
               scrollPositionsRef.current[fileId] = position;
+            }}
+            getFoldRanges={getFoldRanges}
+            onFoldRangesChange={(fileId, ranges) => {
+              foldRangesRef.current[fileId] = ranges;
             }}
           />
         </div>
