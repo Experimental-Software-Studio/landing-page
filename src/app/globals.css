@@ -346,6 +346,9 @@ button {
 }
 
 .editor-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0;
   min-width: 0;
   overflow: hidden;
   color: var(--muted);
@@ -353,6 +356,23 @@ button {
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.breadcrumb-segment {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.breadcrumb-segment span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb-separator {
+  flex: 0 0 auto;
+  margin: 0 2px;
+  color: #858585;
 }
 
 .editor-actions {
@@ -410,8 +430,15 @@ button {
   font-size: 13px;
 }
 
+.cm-gutters {
+  padding-left: 16px;
+  padding-right: 12px;
+}
+
 .cm-scroller {
+  box-sizing: border-box;
   line-height: 1.65;
+  padding-top: 24px;
 }
 
 .markdown-preview {

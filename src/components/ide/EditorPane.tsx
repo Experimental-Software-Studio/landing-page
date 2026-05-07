@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, FileCode2, Lock } from "lucide-react";
+import { ChevronRight, Eye, FileCode2, Lock } from "lucide-react";
 import { CodeEditor } from "@/features/editor/CodeEditor";
 import { MarkdownPreview } from "@/features/preview/MarkdownPreview";
 import type { EditorMode, WorkspaceFile } from "@/features/workspace/types";
@@ -15,11 +15,21 @@ interface EditorPaneProps {
 
 export function EditorPane({ file, value, mode, onModeChange, onChange }: EditorPaneProps) {
   const canPreview = file.renderer === "markdown";
+  const breadcrumbSegments = file.path.split("/");
 
   return (
     <section className="editor-pane" aria-label={`${file.name} editor`}>
       <header className="editor-toolbar">
-        <div className="editor-breadcrumb">{file.path}</div>
+        <div className="editor-breadcrumb" aria-label={file.path}>
+          {breadcrumbSegments.map((segment, index) => (
+            <span key={`${segment}-${index}`} className="breadcrumb-segment">
+              {index > 0 ? (
+                <ChevronRight className="breadcrumb-separator" size={15} aria-hidden="true" />
+              ) : null}
+              <span>{segment}</span>
+            </span>
+          ))}
+        </div>
         <div className="editor-actions" aria-label="Editor mode">
           {canPreview ? (
             <>
