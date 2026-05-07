@@ -1,9 +1,10 @@
 .next
 node_modules
+.pnpm-store
 coverage
 dist
 .env
 .env.*
 !.env.example
 *.tsbuildinfo
-generated/repoMirror.ts
+generated

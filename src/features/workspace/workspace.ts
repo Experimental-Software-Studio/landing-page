@@ -1,14 +1,13 @@
 import { repoMirrorFiles } from "@generated/repoMirror";
-import { contentFiles } from "@/content/workspace/contentFiles";
 import { buildWorkspaceTree } from "./tree";
 import type { EditorMode, WorkspaceAction, WorkspaceFile, WorkspaceState } from "./types";
 
-export const defaultFileId = "content-readme";
+export const defaultFileId = "repo:content/README.md";
 
 export function createInitialWorkspaceState(
   repoFiles: WorkspaceFile[] = repoMirrorFiles,
 ): WorkspaceState {
-  const files = [...contentFiles, ...repoFiles];
+  const files = repoFiles;
   const filesById = Object.fromEntries(files.map((file) => [file.id, file]));
   const editorModes = Object.fromEntries(
     files.map((file): [string, EditorMode] => [file.id, "code"]),

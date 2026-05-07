@@ -1,9 +1,16 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, extname } from "node:path";
 import { shouldMirrorRepoPath } from "./repoMirrorFilter";
 
 const outputPath = "generated/repoMirror.ts";
+const editableMarkdownPaths = new Set([
+  "content/README.md",
+  "content/philosophy.md",
+  "content/roadmap.md",
+  "content/contributing.md",
+  "content/contact.md",
+]);
 
 function gitFiles() {
   const output = execFileSync(
@@ -16,6 +23,7 @@ function gitFiles() {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
+    .filter((path) => existsSync(path))
     .filter(shouldMirrorRepoPath);
 }
 
@@ -46,13 +54,13 @@ const mirroredFiles = gitFiles().map((path) => {
 
   return {
     id: fileId(path),
-    path: `repo/${path}`,
+    path,
     name: fileName(path),
     extension,
     language,
     renderer: language === "markdown" ? "markdown" : "code",
-    editable: false,
-    source: "repo",
+    editable: editableMarkdownPaths.has(path),
+    source: editableMarkdownPaths.has(path) ? "content" : "repo",
     content: readFileSync(path, "utf8"),
   };
 });

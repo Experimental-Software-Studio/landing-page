@@ -1,30 +1,16 @@
-const excludedExactPaths = new Set([
-  "generated/repoMirror.ts",
-  "next-env.d.ts",
-  "pnpm-lock.yaml",
-  "package-lock.json",
-  "yarn.lock",
-]);
+const excludedExactPaths = new Set(["generated/repoMirror.ts"]);
 
 const excludedPrefixes = [
   ".git/",
   ".next/",
+  ".pnpm-store/",
   "coverage/",
   "dist/",
+  "generated/",
   "node_modules/",
 ];
 
-const excludedSuffixes = [
-  ".log",
-  ".map",
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".webp",
-  ".ico",
-  ".tsbuildinfo",
-];
+const excludedSuffixes = [".tsbuildinfo"];
 
 export function shouldMirrorRepoPath(path: string) {
   if (!path || path.startsWith(".env") || path.includes("/.env")) {

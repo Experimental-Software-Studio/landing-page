@@ -8,12 +8,17 @@ describe("shouldMirrorRepoPath", () => {
     expect(shouldMirrorRepoPath("node_modules/pkg/index.js")).toBe(false);
     expect(shouldMirrorRepoPath(".next/server/app.js")).toBe(false);
     expect(shouldMirrorRepoPath("generated/repoMirror.ts")).toBe(false);
-    expect(shouldMirrorRepoPath("pnpm-lock.yaml")).toBe(false);
+    expect(shouldMirrorRepoPath(".pnpm-store/v10/index/foo")).toBe(false);
+    expect(shouldMirrorRepoPath("file.tsbuildinfo")).toBe(false);
   });
 
-  it("includes source and authored content files", () => {
+  it("includes files that are source-controlled on GitHub", () => {
     expect(shouldMirrorRepoPath("src/app/page.tsx")).toBe(true);
-    expect(shouldMirrorRepoPath("src/content/workspace/contentFiles.ts")).toBe(true);
+    expect(shouldMirrorRepoPath("content/README.md")).toBe(true);
     expect(shouldMirrorRepoPath("README.md")).toBe(true);
+    expect(shouldMirrorRepoPath("next-env.d.ts")).toBe(true);
+    expect(shouldMirrorRepoPath("pnpm-lock.yaml")).toBe(true);
+    expect(shouldMirrorRepoPath("public/icon.png")).toBe(true);
+    expect(shouldMirrorRepoPath("src/app/page.js.map")).toBe(true);
   });
 });

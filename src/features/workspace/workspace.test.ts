@@ -8,7 +8,7 @@ import type { WorkspaceFile } from "./types";
 
 const repoFile: WorkspaceFile = {
   id: "repo:src/app/page.tsx",
-  path: "repo/src/app/page.tsx",
+  path: "src/app/page.tsx",
   name: "page.tsx",
   extension: "tsx",
   content: "export default function Page() {}",
@@ -18,9 +18,23 @@ const repoFile: WorkspaceFile = {
   language: "typescript",
 };
 
+const readmeFile: WorkspaceFile = {
+  id: "repo:content/README.md",
+  path: "content/README.md",
+  name: "README.md",
+  extension: "md",
+  content: "# README",
+  editable: true,
+  source: "content",
+  renderer: "markdown",
+  language: "markdown",
+};
+
 describe("workspaceReducer", () => {
+  const readmeId = "repo:content/README.md";
+
   it("single-click opens files as a preview tab and replaces the existing preview", () => {
-    const state = createInitialWorkspaceState([repoFile]);
+    const state = createInitialWorkspaceState([readmeFile, repoFile]);
     const next = workspaceReducer(state, { type: "openFile", fileId: repoFile.id });
 
     expect(next.activeFileId).toBe(repoFile.id);
@@ -29,16 +43,16 @@ describe("workspaceReducer", () => {
   });
 
   it("double-click pins a preview tab so later previews open separately", () => {
-    const state = createInitialWorkspaceState([repoFile]);
-    const pinned = workspaceReducer(state, { type: "pinFile", fileId: "content-readme" });
+    const state = createInitialWorkspaceState([readmeFile, repoFile]);
+    const pinned = workspaceReducer(state, { type: "pinFile", fileId: readmeId });
     const next = workspaceReducer(pinned, { type: "openFile", fileId: repoFile.id });
 
-    expect(next.openTabs).toEqual(["content-readme", repoFile.id]);
+    expect(next.openTabs).toEqual([readmeId, repoFile.id]);
     expect(next.previewTabId).toBe(repoFile.id);
   });
 
   it("double-click pins the active preview tab", () => {
-    const state = createInitialWorkspaceState([repoFile]);
+    const state = createInitialWorkspaceState([readmeFile, repoFile]);
     const preview = workspaceReducer(state, { type: "openFile", fileId: repoFile.id });
     const pinned = workspaceReducer(preview, { type: "pinFile", fileId: repoFile.id });
 
@@ -50,26 +64,26 @@ describe("workspaceReducer", () => {
     const state = createInitialWorkspaceState();
     const next = workspaceReducer(state, {
       type: "setMode",
-      fileId: "content-readme",
+      fileId: readmeId,
       mode: "preview",
     });
 
-    expect(next.editorModes["content-readme"]).toBe("preview");
+    expect(next.editorModes[readmeId]).toBe("preview");
   });
 
   it("edits editable files in memory", () => {
     const state = createInitialWorkspaceState();
     const next = workspaceReducer(state, {
       type: "updateContent",
-      fileId: "content-readme",
+      fileId: readmeId,
       content: "# Changed",
     });
 
-    expect(getFileContent(next, "content-readme")).toBe("# Changed");
+    expect(getFileContent(next, readmeId)).toBe("# Changed");
   });
 
   it("blocks edits to read-only repo files", () => {
-    const state = createInitialWorkspaceState([repoFile]);
+    const state = createInitialWorkspaceState([readmeFile, repoFile]);
     const next = workspaceReducer(state, {
       type: "updateContent",
       fileId: repoFile.id,
@@ -83,10 +97,10 @@ describe("workspaceReducer", () => {
     const state = createInitialWorkspaceState();
     const next = workspaceReducer(state, {
       type: "closeTab",
-      fileId: "content-readme",
+      fileId: readmeId,
     });
 
-    expect(next.openTabs).toEqual(["content-readme"]);
-    expect(next.previewTabId).toBe("content-readme");
+    expect(next.openTabs).toEqual([readmeId]);
+    expect(next.previewTabId).toBe(readmeId);
   });
 });

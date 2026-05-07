@@ -22,16 +22,14 @@ describe("FileExplorer", () => {
 
     await user.click(screen.getByRole("button", { name: /philosophy.md/i }));
 
-    expect(onSelectFile).toHaveBeenCalledWith("content-philosophy");
+    expect(onSelectFile).toHaveBeenCalledWith("repo:content/philosophy.md");
   });
 
   it("preserves nested folder expansion state when a parent is collapsed", async () => {
     const user = userEvent.setup();
     const onSelectFile = vi.fn();
     const state = createInitialWorkspaceState();
-    const tree = state.tree.children.find(
-      (node) => node.name === "repo",
-    ) as WorkspaceFolder;
+    const tree = state.tree.children.find((node) => node.name === "src") as WorkspaceFolder;
 
     render(
       <FileExplorer
@@ -42,7 +40,6 @@ describe("FileExplorer", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "src" }));
     await user.click(screen.getByRole("button", { name: "app" }));
     await user.click(screen.getByRole("button", { name: "app" }));
     await user.click(screen.getByRole("button", { name: "src" }));
@@ -67,6 +64,6 @@ describe("FileExplorer", () => {
 
     await user.dblClick(screen.getByRole("button", { name: /philosophy.md/i }));
 
-    expect(onPinFile).toHaveBeenCalledWith("content-philosophy");
+    expect(onPinFile).toHaveBeenCalledWith("repo:content/philosophy.md");
   });
 });

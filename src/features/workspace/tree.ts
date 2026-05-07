@@ -20,8 +20,8 @@ function createFolder(path: string, name: string): MutableFolder {
 
 function toImmutableFolder(folder: MutableFolder): WorkspaceFolder {
   const folderWeight = (name: string) => {
-    if (name === "workspace") return 0;
-    if (name === "repo") return 1;
+    if (name === "content") return 0;
+    if (name === "src") return 1;
     return 2;
   };
 
