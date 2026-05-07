@@ -92,6 +92,38 @@ export function workspaceReducer(
       };
     }
 
+    case "closeOtherTabs": {
+      if (!state.openTabs.includes(action.fileId)) {
+        return state;
+      }
+
+      return {
+        ...state,
+        openTabs: [action.fileId],
+        previewTabId: state.previewTabId === action.fileId ? action.fileId : null,
+        activeFileId: action.fileId,
+      };
+    }
+
+    case "closeTabsToRight": {
+      const tabIndex = state.openTabs.indexOf(action.fileId);
+
+      if (tabIndex === -1) {
+        return state;
+      }
+
+      const nextTabs = state.openTabs.slice(0, tabIndex + 1);
+      const activeFileId = nextTabs.includes(state.activeFileId) ? state.activeFileId : action.fileId;
+
+      return {
+        ...state,
+        openTabs: nextTabs,
+        previewTabId:
+          state.previewTabId && nextTabs.includes(state.previewTabId) ? state.previewTabId : null,
+        activeFileId,
+      };
+    }
+
     case "setMode": {
       if (!state.filesById[action.fileId]) {
         return state;

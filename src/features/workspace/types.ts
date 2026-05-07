@@ -47,6 +47,8 @@ export type WorkspaceAction =
   | { type: "openFile"; fileId: string }
   | { type: "pinFile"; fileId: string }
   | { type: "closeTab"; fileId: string }
+  | { type: "closeOtherTabs"; fileId: string }
+  | { type: "closeTabsToRight"; fileId: string }
   | { type: "setMode"; fileId: string; mode: EditorMode }
   | { type: "updateContent"; fileId: string; content: string };
 

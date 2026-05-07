@@ -18,6 +18,18 @@ const repoFile: WorkspaceFile = {
   language: "typescript",
 };
 
+const configFile: WorkspaceFile = {
+  id: "repo:package.json",
+  path: "package.json",
+  name: "package.json",
+  extension: "json",
+  content: "{}",
+  editable: false,
+  source: "repo",
+  renderer: "code",
+  language: "json",
+};
+
 const readmeFile: WorkspaceFile = {
   id: "repo:content/README.md",
   path: "content/README.md",
@@ -102,5 +114,31 @@ describe("workspaceReducer", () => {
 
     expect(next.openTabs).toEqual([readmeId]);
     expect(next.previewTabId).toBe(readmeId);
+  });
+
+  it("closes other tabs around the selected tab", () => {
+    const state = createInitialWorkspaceState([readmeFile, repoFile, configFile]);
+    const withPinnedReadme = workspaceReducer(state, { type: "pinFile", fileId: readmeId });
+    const withRepo = workspaceReducer(withPinnedReadme, { type: "pinFile", fileId: repoFile.id });
+    const withConfig = workspaceReducer(withRepo, { type: "pinFile", fileId: configFile.id });
+
+    const next = workspaceReducer(withConfig, { type: "closeOtherTabs", fileId: repoFile.id });
+
+    expect(next.openTabs).toEqual([repoFile.id]);
+    expect(next.activeFileId).toBe(repoFile.id);
+    expect(next.previewTabId).toBeNull();
+  });
+
+  it("closes tabs to the right of the selected tab", () => {
+    const state = createInitialWorkspaceState([readmeFile, repoFile, configFile]);
+    const withPinnedReadme = workspaceReducer(state, { type: "pinFile", fileId: readmeId });
+    const withRepo = workspaceReducer(withPinnedReadme, { type: "pinFile", fileId: repoFile.id });
+    const withConfig = workspaceReducer(withRepo, { type: "pinFile", fileId: configFile.id });
+
+    const next = workspaceReducer(withConfig, { type: "closeTabsToRight", fileId: repoFile.id });
+
+    expect(next.openTabs).toEqual([readmeId, repoFile.id]);
+    expect(next.activeFileId).toBe(repoFile.id);
+    expect(next.previewTabId).toBeNull();
   });
 });

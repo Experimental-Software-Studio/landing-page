@@ -59,6 +59,8 @@ export function WorkspaceShell() {
             onSelectTab={(fileId) => dispatch({ type: "openFile", fileId })}
             onPinTab={(fileId) => dispatch({ type: "pinFile", fileId })}
             onCloseTab={(fileId) => dispatch({ type: "closeTab", fileId })}
+            onCloseOtherTabs={(fileId) => dispatch({ type: "closeOtherTabs", fileId })}
+            onCloseTabsToRight={(fileId) => dispatch({ type: "closeTabsToRight", fileId })}
           />
           <EditorPane
             file={activeFile}
