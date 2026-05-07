@@ -17,6 +17,24 @@ interface FileExplorerProps {
 }
 
 export function FileExplorer({ tree, activeFileId, onSelectFile }: FileExplorerProps) {
+  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
+    () => getInitiallyExpandedFolderIds(tree, activeFileId),
+  );
+
+  function toggleFolder(folderId: string) {
+    setExpandedFolderIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+
+      return next;
+    });
+  }
+
   return (
     <aside className="explorer" aria-label="Explorer">
       <div className="explorer-title">Explorer</div>
@@ -24,21 +42,60 @@ export function FileExplorer({ tree, activeFileId, onSelectFile }: FileExplorerP
         folder={tree}
         activeFileId={activeFileId}
         depth={0}
+        expandedFolderIds={expandedFolderIds}
         onSelectFile={onSelectFile}
+        onToggleFolder={toggleFolder}
       />
     </aside>
   );
+}
+
+function getInitiallyExpandedFolderIds(tree: WorkspaceFolder, activeFileId: string) {
+  const expandedFolderIds = new Set<string>([tree.id]);
+
+  function visit(folder: WorkspaceFolder): boolean {
+    for (const child of folder.children) {
+      if (isWorkspaceFile(child)) {
+        if (child.id === activeFileId) {
+          expandedFolderIds.add(folder.id);
+          return true;
+        }
+
+        continue;
+      }
+
+      if (visit(child)) {
+        expandedFolderIds.add(folder.id);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  visit(tree);
+
+  return expandedFolderIds;
 }
 
 interface TreeFolderProps {
   folder: WorkspaceFolder;
   activeFileId: string;
   depth: number;
+  expandedFolderIds: Set<string>;
   onSelectFile: (fileId: string) => void;
+  onToggleFolder: (folderId: string) => void;
 }
 
-function TreeFolder({ folder, activeFileId, onSelectFile, depth }: TreeFolderProps) {
-  const [expanded, setExpanded] = useState(true);
+function TreeFolder({
+  folder,
+  activeFileId,
+  depth,
+  expandedFolderIds,
+  onSelectFile,
+  onToggleFolder,
+}: TreeFolderProps) {
+  const expanded = expandedFolderIds.has(folder.id);
 
   return (
     <div>
@@ -46,7 +103,7 @@ function TreeFolder({ folder, activeFileId, onSelectFile, depth }: TreeFolderPro
         type="button"
         className={clsx("tree-row folder-row", depth === 0 && "root-folder-row")}
         style={{ paddingLeft: 10 + depth * 14 }}
-        onClick={() => setExpanded((current) => !current)}
+        onClick={() => onToggleFolder(folder.id)}
       >
         {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
         <Folder size={15} />
@@ -59,7 +116,9 @@ function TreeFolder({ folder, activeFileId, onSelectFile, depth }: TreeFolderPro
               node={child}
               activeFileId={activeFileId}
               depth={depth + 1}
+              expandedFolderIds={expandedFolderIds}
               onSelectFile={onSelectFile}
+              onToggleFolder={onToggleFolder}
             />
           ))
         : null}
@@ -71,17 +130,28 @@ interface TreeNodeProps {
   node: WorkspaceNode;
   activeFileId: string;
   depth: number;
+  expandedFolderIds: Set<string>;
   onSelectFile: (fileId: string) => void;
+  onToggleFolder: (folderId: string) => void;
 }
 
-function TreeNode({ node, activeFileId, depth, onSelectFile }: TreeNodeProps) {
+function TreeNode({
+  node,
+  activeFileId,
+  depth,
+  expandedFolderIds,
+  onSelectFile,
+  onToggleFolder,
+}: TreeNodeProps) {
   if (!isWorkspaceFile(node)) {
     return (
       <TreeFolder
         folder={node}
         activeFileId={activeFileId}
         depth={depth}
+        expandedFolderIds={expandedFolderIds}
         onSelectFile={onSelectFile}
+        onToggleFolder={onToggleFolder}
       />
     );
   }

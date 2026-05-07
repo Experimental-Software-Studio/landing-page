@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { FileExplorer } from "./FileExplorer";
 import { createInitialWorkspaceState } from "@/features/workspace/workspace";
+import type { WorkspaceFolder } from "@/features/workspace/types";
 
 describe("FileExplorer", () => {
   it("selects files from the tree", async () => {
@@ -21,5 +22,30 @@ describe("FileExplorer", () => {
     await user.click(screen.getByRole("button", { name: /philosophy.md/i }));
 
     expect(onSelectFile).toHaveBeenCalledWith("content-philosophy");
+  });
+
+  it("preserves nested folder expansion state when a parent is collapsed", async () => {
+    const user = userEvent.setup();
+    const onSelectFile = vi.fn();
+    const state = createInitialWorkspaceState();
+    const tree = state.tree.children.find(
+      (node) => node.name === "repo",
+    ) as WorkspaceFolder;
+
+    render(
+      <FileExplorer
+        tree={tree}
+        activeFileId={state.activeFileId}
+        onSelectFile={onSelectFile}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "src" }));
+    await user.click(screen.getByRole("button", { name: "app" }));
+    await user.click(screen.getByRole("button", { name: "app" }));
+    await user.click(screen.getByRole("button", { name: "src" }));
+    await user.click(screen.getByRole("button", { name: "src" }));
+
+    expect(screen.queryByRole("button", { name: "globals.css" })).not.toBeInTheDocument();
   });
 });
