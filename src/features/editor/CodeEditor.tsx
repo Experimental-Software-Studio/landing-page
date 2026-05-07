@@ -187,6 +187,7 @@ export function CodeEditor({
   const fileIdRef = useRef(fileId);
   const suppressScrollSaveRef = useRef(false);
   const suppressFoldSaveRef = useRef(false);
+  const suppressChangeRef = useRef(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -254,7 +255,7 @@ export function CodeEditor({
           EditorView.editable.of(!readOnly),
           language === "markdown" ? EditorView.lineWrapping : horizontalScrollTheme,
           EditorView.updateListener.of((update) => {
-            if (update.docChanged && !readOnly) {
+            if (update.docChanged && !readOnly && !suppressChangeRef.current) {
               onChangeRef.current(update.state.doc.toString());
             }
 
@@ -298,9 +299,14 @@ export function CodeEditor({
     if (current !== value) {
       suppressScrollSaveRef.current = true;
       suppressFoldSaveRef.current = true;
-      view.dispatch({
-        changes: { from: 0, to: current.length, insert: value },
-      });
+      suppressChangeRef.current = true;
+      try {
+        view.dispatch({
+          changes: { from: 0, to: current.length, insert: value },
+        });
+      } finally {
+        suppressChangeRef.current = false;
+      }
 
       const releaseFoldSave = window.setTimeout(() => {
         suppressFoldSaveRef.current = false;
