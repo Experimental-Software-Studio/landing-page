@@ -19,9 +19,10 @@
     "@codemirror/lang-json": "latest",
     "@codemirror/lang-markdown": "latest",
     "@codemirror/state": "latest",
-    "@codemirror/theme-one-dark": "latest",
     "@codemirror/view": "latest",
     "@lezer/highlight": "latest",
+    "@peoplesgrocers/seti-ui-file-icons": "^1.11.3",
+    "@uiw/codemirror-theme-vscode": "^4.25.9",
     "clsx": "latest",
     "lucide-react": "latest",
     "next": "latest",
@@ -35,10 +36,10 @@
     "unified": "latest"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "latest",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
     "@testing-library/user-event": "latest",
-    "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",

@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronDown, ChevronRight, FileCode2, FileLock2, Folder } from "lucide-react";
+import { ChevronDown, ChevronRight, Folder } from "lucide-react";
 import { useState } from "react";
 import { clsx } from "clsx";
+import { SetiFileIcon } from "./SetiFileIcon";
 import {
   isWorkspaceFile,
   type WorkspaceFolder,
@@ -43,7 +44,7 @@ function TreeFolder({ folder, activeFileId, onSelectFile, depth }: TreeFolderPro
     <div>
       <button
         type="button"
-        className="tree-row folder-row"
+        className={clsx("tree-row folder-row", depth === 0 && "root-folder-row")}
         style={{ paddingLeft: 10 + depth * 14 }}
         onClick={() => setExpanded((current) => !current)}
       >
@@ -92,7 +93,7 @@ function TreeNode({ node, activeFileId, depth, onSelectFile }: TreeNodeProps) {
       style={{ paddingLeft: 10 + depth * 14 }}
       onClick={() => onSelectFile(node.id)}
     >
-      {node.editable ? <FileCode2 size={15} /> : <FileLock2 size={15} />}
+      <SetiFileIcon fileName={node.name} />
       <span>{node.name}</span>
     </button>
   );

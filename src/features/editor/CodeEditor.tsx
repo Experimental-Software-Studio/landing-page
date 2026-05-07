@@ -1,8 +1,8 @@
 "use client";
 
-import { oneDark } from "@codemirror/theme-one-dark";
 import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import { useEffect, useRef } from "react";
 import type { WorkspaceLanguage } from "@/features/workspace/types";
 import { getCodeMirrorLanguage } from "./languageExtensions";
@@ -36,7 +36,7 @@ export function CodeEditor({ value, language, readOnly, onChange }: CodeEditorPr
         doc: "",
         extensions: [
           lineNumbers(),
-          oneDark,
+          vscodeDark,
           getCodeMirrorLanguage(language),
           EditorState.readOnly.of(readOnly),
           EditorView.editable.of(!readOnly),
