@@ -1246,6 +1246,33 @@ button {
   line-height: 1.65;
 }
 
+@supports (-webkit-touch-callout: none) {
+  @media (hover: none) and (pointer: coarse) {
+    .search-input-row {
+      --ios-focus-scale: 0.8125;
+      height: 36px;
+      overflow: hidden;
+    }
+
+    .search-input {
+      width: calc(100% / var(--ios-focus-scale));
+      height: calc(28px / var(--ios-focus-scale));
+      padding: 0 calc(10px / var(--ios-focus-scale));
+      font-size: 16px;
+      transform: scale(var(--ios-focus-scale));
+      transform-origin: top left;
+    }
+
+    .cm-content {
+      font-size: 16px;
+    }
+
+    .cm-line {
+      font-size: 13px;
+    }
+  }
+}
+
 .ide-shell .cm-editor .cm-foldPlaceholder {
   border: 0 !important;
   background: transparent !important;
