@@ -44,6 +44,7 @@ export function EditorPane({
   revealRequest,
 }: EditorPaneProps) {
   const canPreview = file.renderer === "markdown";
+  const isImage = file.renderer === "image";
   const breadcrumbSegments = file.path.split("/");
 
   return (
@@ -60,7 +61,7 @@ export function EditorPane({
           ))}
         </div>
         <div className="editor-actions" aria-label="Editor mode">
-          {canPreview ? (
+          {canPreview && !isImage ? (
             <>
               <button
                 type="button"
@@ -89,7 +90,9 @@ export function EditorPane({
         </div>
       </header>
       <div className="editor-body">
-        {canPreview && mode === "preview" ? (
+        {isImage ? (
+          <ImagePreview file={file} />
+        ) : canPreview && mode === "preview" ? (
           <MarkdownPreview markdown={value} />
         ) : (
           <CodeEditor
@@ -111,5 +114,15 @@ export function EditorPane({
         )}
       </div>
     </section>
+  );
+}
+
+function ImagePreview({ file }: { file: WorkspaceFile }) {
+  return (
+    <div className="image-preview" aria-label={`${file.name} image preview`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={file.content} alt={file.name} className="image-preview-image" />
+      <div className="image-preview-caption">{file.path}</div>
+    </div>
   );
 }

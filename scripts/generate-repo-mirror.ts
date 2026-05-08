@@ -53,6 +53,7 @@ function resolveActualPathCasing(path: string) {
 function languageForPath(path: string) {
   const extension = extname(path).slice(1);
 
+  if (isImageExtension(extension)) return "image";
   if (extension === "md" || extension === "mdx") return "markdown";
   if (extension === "ts" || extension === "tsx") return "typescript";
   if (extension === "js" || extension === "jsx" || extension === "mjs") return "javascript";
@@ -62,6 +63,32 @@ function languageForPath(path: string) {
   if (extension === "yaml" || extension === "yml") return "yaml";
 
   return "text";
+}
+
+function isImageExtension(extension: string) {
+  return ["avif", "gif", "ico", "jpeg", "jpg", "png", "svg", "webp"].includes(
+    extension.toLowerCase(),
+  );
+}
+
+function mimeTypeForImageExtension(extension: string) {
+  const normalizedExtension = extension.toLowerCase();
+
+  if (normalizedExtension === "svg") return "image/svg+xml";
+  if (normalizedExtension === "jpg") return "image/jpeg";
+  if (normalizedExtension === "ico") return "image/x-icon";
+
+  return `image/${normalizedExtension}`;
+}
+
+function contentForPath(path: string, language: string, extension: string) {
+  if (language !== "image") {
+    return readFileSync(path, "utf8");
+  }
+
+  const file = readFileSync(path);
+
+  return `data:${mimeTypeForImageExtension(extension)};base64,${file.toString("base64")}`;
 }
 
 function fileName(path: string) {
@@ -114,10 +141,10 @@ const mirroredFiles = gitFiles().map((path) => {
     name: fileName(path),
     extension,
     language,
-    renderer: language === "markdown" ? "markdown" : "code",
+    renderer: language === "markdown" ? "markdown" : language === "image" ? "image" : "code",
     editable: editableMarkdownPaths.has(path),
     source: editableMarkdownPaths.has(path) ? "content" : "repo",
-    content: readFileSync(path, "utf8"),
+    content: contentForPath(path, language, extension),
   };
 });
 

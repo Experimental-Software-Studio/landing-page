@@ -91,10 +91,12 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
 
   const activeFile = state.activeFileId ? state.filesById[state.activeFileId] : null;
   const files = Object.values(state.filesById);
-  const searchableFiles = files.map((file) => ({
-    ...file,
-    currentContent: getFileContent(state, file.id),
-  }));
+  const searchableFiles = files
+    .filter((file) => file.renderer !== "image")
+    .map((file) => ({
+      ...file,
+      currentContent: getFileContent(state, file.id),
+    }));
   const changedFiles = files.filter(
     (file) => file.editable && state.editedContents[file.id] !== undefined &&
       state.editedContents[file.id] !== file.content,

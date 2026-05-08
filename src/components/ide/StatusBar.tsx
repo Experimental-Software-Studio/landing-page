@@ -10,6 +10,7 @@ interface StatusBarProps {
 const languageLabels: Record<WorkspaceFile["language"], string> = {
   css: "CSS",
   html: "HTML",
+  image: "Image",
   javascript: "JavaScript",
   json: "JSON",
   markdown: "Markdown",

@@ -1157,6 +1157,36 @@ button {
   color: #ffffff;
 }
 
+.image-preview {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 28px;
+  background: var(--bg);
+}
+
+.image-preview-image {
+  align-self: center;
+  justify-self: center;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  object-fit: contain;
+}
+
+.image-preview-caption {
+  overflow: hidden;
+  padding-top: 14px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .readonly-pill {
   display: flex;
   align-items: center;

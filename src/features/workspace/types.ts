@@ -1,5 +1,5 @@
 export type WorkspaceFileSource = "content" | "repo";
-export type WorkspaceRenderer = "markdown" | "code";
+export type WorkspaceRenderer = "markdown" | "code" | "image";
 export type WorkspaceLanguage =
   | "markdown"
   | "typescript"
@@ -8,6 +8,7 @@ export type WorkspaceLanguage =
   | "css"
   | "html"
   | "yaml"
+  | "image"
   | "text";
 
 export type EditorMode = "code" | "preview";
