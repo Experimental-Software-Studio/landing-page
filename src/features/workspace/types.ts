@@ -49,6 +49,7 @@ export type WorkspaceAction =
   | { type: "closeTab"; fileId: string }
   | { type: "closeOtherTabs"; fileId: string }
   | { type: "closeTabsToRight"; fileId: string }
+  | { type: "reorderTab"; fileId: string; targetIndex: number }
   | { type: "setMode"; fileId: string; mode: EditorMode }
   | { type: "updateContent"; fileId: string; content: string };
 

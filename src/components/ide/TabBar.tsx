@@ -15,12 +15,19 @@ interface TabBarProps {
   onCloseTab: (fileId: string) => void;
   onCloseOtherTabs: (fileId: string) => void;
   onCloseTabsToRight: (fileId: string) => void;
+  onReorderTab: (fileId: string, targetIndex: number) => void;
 }
 
 interface TabContextMenuState {
   fileId: string;
   x: number;
   y: number;
+}
+
+interface DropIndicatorState {
+  fileId: string;
+  side: "before" | "after";
+  targetIndex: number;
 }
 
 export function TabBar({
@@ -32,8 +39,11 @@ export function TabBar({
   onCloseTab,
   onCloseOtherTabs,
   onCloseTabsToRight,
+  onReorderTab,
 }: TabBarProps) {
   const [contextMenu, setContextMenu] = useState<TabContextMenuState | null>(null);
+  const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+  const [dropIndicator, setDropIndicator] = useState<DropIndicatorState | null>(null);
   const contextFile = contextMenu ? tabs.find((tab) => tab.id === contextMenu.fileId) : null;
   const contextFileIndex = contextFile ? tabs.findIndex((tab) => tab.id === contextFile.id) : -1;
   const hasTabsToRight = contextFileIndex >= 0 && contextFileIndex < tabs.length - 1;
@@ -87,23 +97,86 @@ export function TabBar({
 
   return (
     <>
-      <div className="tab-bar" role="tablist" aria-label="Open files">
-        {tabs.map((file) => (
+      <div
+        className="tab-bar"
+        role="tablist"
+        aria-label="Open files"
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setDropIndicator(null);
+          }
+        }}
+        onDragOver={(event) => {
+          if (!draggedFileId) {
+            return;
+          }
+
+          event.preventDefault();
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+
+          if (draggedFileId && dropIndicator) {
+            onReorderTab(draggedFileId, dropIndicator.targetIndex);
+          }
+
+          setDraggedFileId(null);
+          setDropIndicator(null);
+        }}
+      >
+        {tabs.map((file, index) => (
           <button
             key={file.id}
             type="button"
             role="tab"
+            draggable
             aria-selected={file.id === activeFileId}
             className={clsx(
               "tab",
               file.id === activeFileId && "active",
               file.id === previewTabId && "preview",
+              file.id === draggedFileId && "dragging",
+              dropIndicator?.fileId === file.id &&
+                (dropIndicator.side === "before" ? "drop-before" : "drop-after"),
             )}
+            onPointerDown={() => onSelectTab(file.id)}
             onClick={() => onSelectTab(file.id)}
             onDoubleClick={() => onPinTab(file.id)}
             onContextMenu={(event) => {
               event.preventDefault();
               setContextMenu({ fileId: file.id, x: event.clientX, y: event.clientY });
+            }}
+            onDragStart={(event) => {
+              setDraggedFileId(file.id);
+              setContextMenu(null);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", file.id);
+
+              const dragPreview = event.currentTarget.cloneNode(true) as HTMLElement;
+              dragPreview.classList.add("tab-drag-preview");
+              event.currentTarget.ownerDocument.body.append(dragPreview);
+              event.dataTransfer.setDragImage(dragPreview, 0, 0);
+
+              requestAnimationFrame(() => {
+                dragPreview.remove();
+              });
+            }}
+            onDragEnd={() => {
+              setDraggedFileId(null);
+              setDropIndicator(null);
+            }}
+            onDragOver={(event) => {
+              if (!draggedFileId || draggedFileId === file.id) {
+                return;
+              }
+
+              event.preventDefault();
+
+              const rect = event.currentTarget.getBoundingClientRect();
+              const side = event.clientX < rect.left + rect.width / 2 ? "before" : "after";
+              const targetIndex = side === "before" ? index : index + 1;
+
+              setDropIndicator({ fileId: file.id, side, targetIndex });
             }}
           >
             <SetiFileIcon fileName={file.name} />

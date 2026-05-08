@@ -124,6 +124,26 @@ export function workspaceReducer(
       };
     }
 
+    case "reorderTab": {
+      const currentIndex = state.openTabs.indexOf(action.fileId);
+
+      if (currentIndex === -1) {
+        return state;
+      }
+
+      const nextTabs = state.openTabs.filter((fileId) => fileId !== action.fileId);
+      const adjustedTargetIndex =
+        action.targetIndex > currentIndex ? action.targetIndex - 1 : action.targetIndex;
+      const targetIndex = Math.min(nextTabs.length, Math.max(0, adjustedTargetIndex));
+
+      nextTabs.splice(targetIndex, 0, action.fileId);
+
+      return {
+        ...state,
+        openTabs: nextTabs,
+      };
+    }
+
     case "setMode": {
       if (!state.filesById[action.fileId]) {
         return state;

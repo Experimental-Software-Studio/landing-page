@@ -141,4 +141,21 @@ describe("workspaceReducer", () => {
     expect(next.activeFileId).toBe(repoFile.id);
     expect(next.previewTabId).toBeNull();
   });
+
+  it("reorders open tabs", () => {
+    const state = createInitialWorkspaceState([readmeFile, repoFile, configFile]);
+    const withPinnedReadme = workspaceReducer(state, { type: "pinFile", fileId: readmeId });
+    const withRepo = workspaceReducer(withPinnedReadme, { type: "pinFile", fileId: repoFile.id });
+    const withConfig = workspaceReducer(withRepo, { type: "pinFile", fileId: configFile.id });
+
+    const next = workspaceReducer(withConfig, {
+      type: "reorderTab",
+      fileId: readmeId,
+      targetIndex: 3,
+    });
+
+    expect(next.openTabs).toEqual([repoFile.id, configFile.id, readmeId]);
+    expect(next.activeFileId).toBe(configFile.id);
+    expect(next.previewTabId).toBeNull();
+  });
 });

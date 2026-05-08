@@ -52,6 +52,7 @@ function renderTabBar(overrides: Partial<ComponentProps<typeof TabBar>> = {}) {
       onCloseTab={vi.fn()}
       onCloseOtherTabs={vi.fn()}
       onCloseTabsToRight={vi.fn()}
+      onReorderTab={vi.fn()}
       {...overrides}
     />,
   );
@@ -115,5 +116,39 @@ describe("TabBar", () => {
 
     await user.click(screen.getByRole("menuitem", { name: "Close" }));
     expect(onCloseTab).toHaveBeenCalledWith("repo:content/philosophy.md");
+  });
+
+  it("selects on pointer down and reorders tabs on drop", () => {
+    const onSelectTab = vi.fn();
+    const onReorderTab = vi.fn();
+
+    renderTabBar({ onSelectTab, onReorderTab });
+
+    const readmeTab = screen.getByRole("tab", { name: /README.md/i });
+    const packageTab = screen.getByRole("tab", { name: /package.json/i });
+
+    fireEvent.pointerDown(packageTab);
+    expect(onSelectTab).toHaveBeenCalledWith("repo:package.json");
+
+    packageTab.getBoundingClientRect = () =>
+      ({
+        left: 100,
+        right: 220,
+        top: 0,
+        bottom: 36,
+        width: 120,
+        height: 36,
+        x: 100,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    fireEvent.dragStart(readmeTab, {
+      dataTransfer: { effectAllowed: "move", setData: vi.fn(), setDragImage: vi.fn() },
+    });
+    fireEvent.dragOver(packageTab, { clientX: 210 });
+    fireEvent.drop(screen.getByRole("tablist", { name: "Open files" }));
+
+    expect(onReorderTab).toHaveBeenCalledWith("repo:content/README.md", 3);
   });
 });

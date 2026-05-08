@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Folder } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { clsx } from "clsx";
 import { SetiFileIcon } from "./SetiFileIcon";
@@ -115,7 +115,6 @@ function TreeFolder({
         onClick={() => onToggleFolder(folder.id)}
       >
         {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-        <Folder size={15} />
         <span>{folder.name}</span>
       </button>
       {expanded

@@ -146,7 +146,7 @@ button {
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: 48px 288px minmax(0, 1fr);
+  grid-template-columns: 48px var(--explorer-width, 288px) 4px minmax(0, 1fr);
   min-height: 0;
 }
 
@@ -192,6 +192,36 @@ button {
   color: #cccccc;
 }
 
+.explorer-resizer {
+  position: relative;
+  z-index: 2;
+  cursor: col-resize;
+  background: var(--bg);
+  touch-action: none;
+}
+
+.explorer-resizer::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 10px;
+  content: "";
+}
+
+.explorer-resizer[data-hover-active="true"],
+.explorer-resizer:focus-visible,
+.is-resizing-explorer .explorer-resizer {
+  outline: 0;
+  background: var(--accent);
+}
+
+.is-resizing-explorer,
+.is-resizing-explorer * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
 .explorer-title {
   height: 34px;
   padding: 11px 20px 8px;
@@ -220,6 +250,10 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tree-row svg {
+  flex: 0 0 auto;
 }
 
 .tree-row:hover,
@@ -278,6 +312,7 @@ button {
 }
 
 .tab {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -292,6 +327,39 @@ button {
   color: #bdbdbd;
   cursor: pointer;
   user-select: none;
+}
+
+.tab.dragging {
+  opacity: 0.64;
+}
+
+.tab-drag-preview {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  width: 180px;
+  opacity: 0.96;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.32);
+}
+
+.tab.drop-before::before,
+.tab.drop-after::after {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  z-index: 2;
+  width: 2px;
+  background: #ffffff;
+  content: "";
+}
+
+.tab.drop-before::before {
+  left: 0;
+}
+
+.tab.drop-after::after {
+  right: -1px;
 }
 
 .tab.active {
@@ -636,7 +704,9 @@ button {
   }
 
   .workspace-grid {
-    grid-template-columns: 42px minmax(178px, 34vw) minmax(0, 1fr);
+    grid-template-columns:
+      42px minmax(168px, min(var(--explorer-width, 288px), 34vw)) 4px
+      minmax(0, 1fr);
   }
 
   .activity-bar {
@@ -648,7 +718,7 @@ button {
   }
 
   .editor-workbench {
-    grid-column: 3;
+    grid-column: 4;
   }
 
   .editor-toolbar {
