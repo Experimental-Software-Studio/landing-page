@@ -1,11 +1,17 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, extname } from "node:path";
+import {
+  getImageMimeType,
+  getLanguageForPath,
+  getRendererForPath,
+} from "../src/features/workspace/language";
 import { shouldMirrorRepoPath } from "./repoMirrorFilter";
 
 const outputPath = "generated/repoMirror.ts";
 const gitHistoryOutputPath = "generated/gitHistory.ts";
 const editableMarkdownPaths = new Set([
+  "README.md",
   "content/README.md",
   "content/PROJECTS.md",
   "content/ABOUT.md",
@@ -50,37 +56,6 @@ function resolveActualPathCasing(path: string) {
     .join("/");
 }
 
-function languageForPath(path: string) {
-  const extension = extname(path).slice(1);
-
-  if (isImageExtension(extension)) return "image";
-  if (extension === "md" || extension === "mdx") return "markdown";
-  if (extension === "ts" || extension === "tsx") return "typescript";
-  if (extension === "js" || extension === "jsx" || extension === "mjs") return "javascript";
-  if (extension === "json") return "json";
-  if (extension === "css") return "css";
-  if (extension === "html") return "html";
-  if (extension === "yaml" || extension === "yml") return "yaml";
-
-  return "text";
-}
-
-function isImageExtension(extension: string) {
-  return ["avif", "gif", "ico", "jpeg", "jpg", "png", "svg", "webp"].includes(
-    extension.toLowerCase(),
-  );
-}
-
-function mimeTypeForImageExtension(extension: string) {
-  const normalizedExtension = extension.toLowerCase();
-
-  if (normalizedExtension === "svg") return "image/svg+xml";
-  if (normalizedExtension === "jpg") return "image/jpeg";
-  if (normalizedExtension === "ico") return "image/x-icon";
-
-  return `image/${normalizedExtension}`;
-}
-
 function contentForPath(path: string, language: string, extension: string) {
   if (language !== "image") {
     return readFileSync(path, "utf8");
@@ -88,7 +63,7 @@ function contentForPath(path: string, language: string, extension: string) {
 
   const file = readFileSync(path);
 
-  return `data:${mimeTypeForImageExtension(extension)};base64,${file.toString("base64")}`;
+  return `data:${getImageMimeType(extension)};base64,${file.toString("base64")}`;
 }
 
 function fileName(path: string) {
@@ -122,7 +97,7 @@ function gitHistory() {
         refs: refs
           .split(", ")
           .map((ref) => ref.trim())
-          .filter(Boolean),
+          .filter((ref) => ref && ref !== "grafted"),
       };
     });
 }
@@ -133,7 +108,7 @@ function currentBranch() {
 
 const mirroredFiles = gitFiles().map((path) => {
   const extension = extname(path).slice(1);
-  const language = languageForPath(path);
+  const language = getLanguageForPath(path);
 
   return {
     id: fileId(path),
@@ -141,7 +116,7 @@ const mirroredFiles = gitFiles().map((path) => {
     name: fileName(path),
     extension,
     language,
-    renderer: language === "markdown" ? "markdown" : language === "image" ? "image" : "code",
+    renderer: getRendererForPath(path),
     editable: editableMarkdownPaths.has(path),
     source: editableMarkdownPaths.has(path) ? "content" : "repo",
     content: contentForPath(path, language, extension),

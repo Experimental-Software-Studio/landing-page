@@ -15,7 +15,7 @@ import {
 import { ActivityBar, type ActivityView } from "./ActivityBar";
 import { CommandPalette, type CommandPaletteCommand } from "./CommandPalette";
 import { EditorPane } from "./EditorPane";
-import { FileExplorer } from "./FileExplorer";
+import { FileExplorer, getInitiallyExpandedFolderIds } from "./FileExplorer";
 import { QuickOpen } from "./QuickOpen";
 import { SearchPanel } from "./SearchPanel";
 import { SourceControlPanel } from "./SourceControlPanel";
@@ -77,6 +77,9 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
   const [explorerWidth, setExplorerWidth] = useState(defaultExplorerWidth);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>("auto");
   const [activeActivityView, setActiveActivityView] = useState<ActivityView>("explorer");
+  const [expandedExplorerFolderIds, setExpandedExplorerFolderIds] = useState<Set<string>>(() =>
+    getInitiallyExpandedFolderIds(state.tree, state.activeFileId),
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [revealRequest, setRevealRequest] = useState<EditorRevealRequest | null>(null);
   const [isResizeHandleHoverActive, setIsResizeHandleHoverActive] = useState(false);
@@ -330,9 +333,11 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
               <FileExplorer
                 tree={state.tree}
                 activeFileId={state.activeFileId}
+                expandedFolderIds={expandedExplorerFolderIds}
                 modifiedFileIds={modifiedFileIds}
                 onSelectFile={(fileId) => dispatch({ type: "openFile", fileId })}
                 onPinFile={(fileId) => dispatch({ type: "pinFile", fileId })}
+                onExpandedFolderIdsChange={setExpandedExplorerFolderIds}
               />
             ) : activeActivityView === "search" ? (
               <SearchPanel

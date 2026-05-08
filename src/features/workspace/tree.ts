@@ -19,17 +19,9 @@ function createFolder(path: string, name: string): MutableFolder {
 }
 
 function toImmutableFolder(folder: MutableFolder): WorkspaceFolder {
-  const folderWeight = (name: string) => {
-    if (name === "content") return 0;
-    if (name === "src") return 1;
-    return 2;
-  };
-
   const children: WorkspaceNode[] = [
     ...Array.from(folder.folders.values())
-      .sort(
-        (a, b) => folderWeight(a.name) - folderWeight(b.name) || a.name.localeCompare(b.name),
-      )
+      .sort((a, b) => a.name.localeCompare(b.name))
       .map(toImmutableFolder),
     ...folder.files.sort((a, b) => a.name.localeCompare(b.name)),
   ];

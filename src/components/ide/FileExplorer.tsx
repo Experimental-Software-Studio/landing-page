@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronRight, PanelTopClose } from "lucide-react";
 import { clsx } from "clsx";
 import { SetiFileIcon } from "./SetiFileIcon";
 import {
@@ -13,34 +12,36 @@ import {
 interface FileExplorerProps {
   tree: WorkspaceFolder;
   activeFileId: string | null;
+  expandedFolderIds: Set<string>;
   modifiedFileIds?: Set<string>;
   onSelectFile: (fileId: string) => void;
   onPinFile: (fileId: string) => void;
+  onExpandedFolderIdsChange: (expandedFolderIds: Set<string>) => void;
 }
 
 export function FileExplorer({
   tree,
   activeFileId,
+  expandedFolderIds,
   modifiedFileIds = new Set(),
   onSelectFile,
   onPinFile,
+  onExpandedFolderIdsChange,
 }: FileExplorerProps) {
-  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
-    () => getInitiallyExpandedFolderIds(tree, activeFileId),
-  );
-
   function toggleFolder(folderId: string) {
-    setExpandedFolderIds((current) => {
-      const next = new Set(current);
+    const next = new Set(expandedFolderIds);
 
-      if (next.has(folderId)) {
-        next.delete(folderId);
-      } else {
-        next.add(folderId);
-      }
+    if (next.has(folderId)) {
+      next.delete(folderId);
+    } else {
+      next.add(folderId);
+    }
 
-      return next;
-    });
+    onExpandedFolderIdsChange(next);
+  }
+
+  function collapseAllFolders() {
+    onExpandedFolderIdsChange(new Set([tree.id]));
   }
 
   return (
@@ -55,12 +56,16 @@ export function FileExplorer({
         onSelectFile={onSelectFile}
         onPinFile={onPinFile}
         onToggleFolder={toggleFolder}
+        onCollapseAll={collapseAllFolders}
       />
     </aside>
   );
 }
 
-function getInitiallyExpandedFolderIds(tree: WorkspaceFolder, activeFileId: string | null) {
+export function getInitiallyExpandedFolderIds(
+  tree: WorkspaceFolder,
+  activeFileId: string | null,
+) {
   const expandedFolderIds = new Set<string>([tree.id]);
 
   function visit(folder: WorkspaceFolder): boolean {
@@ -97,6 +102,7 @@ interface TreeFolderProps {
   onSelectFile: (fileId: string) => void;
   onPinFile: (fileId: string) => void;
   onToggleFolder: (folderId: string) => void;
+  onCollapseAll?: () => void;
 }
 
 function TreeFolder({
@@ -108,20 +114,39 @@ function TreeFolder({
   onSelectFile,
   onPinFile,
   onToggleFolder,
+  onCollapseAll,
 }: TreeFolderProps) {
   const expanded = expandedFolderIds.has(folder.id);
+  const folderRow = (
+    <button
+      type="button"
+      className={clsx("tree-row folder-row", depth === 0 && "root-folder-row")}
+      style={{ paddingLeft: 10 + depth * 14 }}
+      onClick={() => onToggleFolder(folder.id)}
+    >
+      {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+      <span>{folder.name}</span>
+    </button>
+  );
 
   return (
     <div>
-      <button
-        type="button"
-        className={clsx("tree-row folder-row", depth === 0 && "root-folder-row")}
-        style={{ paddingLeft: 10 + depth * 14 }}
-        onClick={() => onToggleFolder(folder.id)}
-      >
-        {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-        <span>{folder.name}</span>
-      </button>
+      {depth === 0 && onCollapseAll ? (
+        <div className="root-folder-header">
+          {folderRow}
+          <button
+            type="button"
+            className="explorer-collapse-button"
+            aria-label="Collapse all folders"
+            title="Collapse all folders"
+            onClick={onCollapseAll}
+          >
+            <PanelTopClose size={15} />
+          </button>
+        </div>
+      ) : (
+        folderRow
+      )}
       {expanded
         ? folder.children.map((child) => (
             <TreeNode

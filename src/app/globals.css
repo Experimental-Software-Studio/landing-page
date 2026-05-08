@@ -387,9 +387,8 @@ button {
 .source-title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: 34px;
-  padding: 11px 12px 8px 20px;
+  padding: 11px 20px 8px;
 }
 
 .source-title {
@@ -400,21 +399,6 @@ button {
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.source-icon-button {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 22px;
-  border: 0;
-  background: transparent;
-  color: #c8c8c8;
-  cursor: pointer;
-}
-
-.source-icon-button:hover {
-  background: #37373d;
 }
 
 .source-action-row {
@@ -725,6 +709,37 @@ button {
 
 .root-folder-row {
   text-transform: uppercase;
+}
+
+.root-folder-header {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.root-folder-header .root-folder-row {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.explorer-collapse-button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  border: 0;
+  background: transparent;
+  color: #cccccc;
+  cursor: pointer;
+}
+
+.explorer-collapse-button:hover,
+.explorer-collapse-button:focus-visible {
+  outline: 0;
+  background: #37373d;
+  color: #ffffff;
 }
 
 .file-row {

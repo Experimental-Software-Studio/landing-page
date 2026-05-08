@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm generate:repo && next dev",
-    "build": "pnpm generate:repo && next build",
+    "build": "pnpm prepare:git-history && pnpm generate:repo && next build",
     "start": "next start",
     "lint": "eslint .",
     "test": "pnpm generate:repo && vitest run",
     "test:watch": "pnpm generate:repo && vitest",
-    "generate:repo": "node --import tsx scripts/generate-repo-mirror.ts"
+    "generate:repo": "node --import tsx scripts/generate-repo-mirror.ts",
+    "prepare:git-history": "node --import tsx scripts/ensure-git-history.ts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",

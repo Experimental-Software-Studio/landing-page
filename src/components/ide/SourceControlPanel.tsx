@@ -3,7 +3,6 @@
 import {
   ChevronDown,
   GitBranch,
-  MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -157,9 +156,6 @@ export function SourceControlPanel({
     >
       <div className="source-title-row">
         <div className="source-title">Source Control</div>
-        <button type="button" className="source-icon-button" aria-label="More source actions">
-          <MoreHorizontal size={16} />
-        </button>
       </div>
 
       <div className="source-action-row">
