@@ -1,10 +1,14 @@
 import { Command } from "lucide-react";
 
-export function CommandPaletteHint() {
+interface CommandPaletteHintProps {
+  onOpen: () => void;
+}
+
+export function CommandPaletteHint({ onOpen }: CommandPaletteHintProps) {
   return (
-    <div className="command-hint" aria-label="Command palette placeholder">
+    <button type="button" className="command-hint" aria-label="Open quick file search" onClick={onOpen}>
       <Command size={15} />
-      <span>Quick Open is coming soon</span>
-    </div>
+      <span>Search files</span>
+    </button>
   );
 }

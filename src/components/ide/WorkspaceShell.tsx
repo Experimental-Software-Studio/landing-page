@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useReducer,
   useRef,
   useState,
@@ -12,6 +13,7 @@ import { ActivityBar } from "./ActivityBar";
 import { CommandPaletteHint } from "./CommandPaletteHint";
 import { EditorPane } from "./EditorPane";
 import { FileExplorer } from "./FileExplorer";
+import { QuickOpen } from "./QuickOpen";
 import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
 import type { EditorFoldRange, EditorScrollPosition } from "@/features/editor/CodeEditor";
@@ -36,11 +38,13 @@ export function WorkspaceShell() {
   );
   const [explorerWidth, setExplorerWidth] = useState(defaultExplorerWidth);
   const [isResizeHandleHoverActive, setIsResizeHandleHoverActive] = useState(false);
+  const [quickOpenVisible, setQuickOpenVisible] = useState(false);
   const scrollPositionsRef = useRef<Record<string, EditorScrollPosition>>({});
   const foldRangesRef = useRef<Record<string, EditorFoldRange[]>>({});
   const resizeHoverTimerRef = useRef<number | null>(null);
 
   const activeFile = state.filesById[state.activeFileId];
+  const files = Object.values(state.filesById);
   const openTabs = state.openTabs.map((fileId) => state.filesById[fileId]).filter(Boolean);
   const mode = state.editorModes[activeFile.id] ?? "code";
   const content = getFileContent(state, activeFile.id);
@@ -98,6 +102,23 @@ export function WorkspaceShell() {
     window.addEventListener("pointercancel", stopResize);
   }, [clearResizeHoverTimer, explorerWidth]);
 
+  useEffect(() => {
+    const openQuickOpen = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "p" || (!event.metaKey && !event.ctrlKey)) {
+        return;
+      }
+
+      event.preventDefault();
+      setQuickOpenVisible(true);
+    };
+
+    window.addEventListener("keydown", openQuickOpen);
+
+    return () => {
+      window.removeEventListener("keydown", openQuickOpen);
+    };
+  }, []);
+
   return (
     <main
       className="ide-shell"
@@ -110,7 +131,7 @@ export function WorkspaceShell() {
           <span className="traffic traffic-maximize" />
         </div>
         <div className="window-title">Experimental Software Studio - landing-page</div>
-        <CommandPaletteHint />
+        <CommandPaletteHint onOpen={() => setQuickOpenVisible(true)} />
       </header>
 
       <div className="workspace-grid">
@@ -186,6 +207,15 @@ export function WorkspaceShell() {
           />
         </div>
       </div>
+
+      {quickOpenVisible ? (
+        <QuickOpen
+          files={files}
+          activeFileId={state.activeFileId}
+          onClose={() => setQuickOpenVisible(false)}
+          onOpenFile={(fileId) => dispatch({ type: "pinFile", fileId })}
+        />
+      ) : null}
 
       <StatusBar file={activeFile} mode={mode} openCount={openTabs.length} />
     </main>
