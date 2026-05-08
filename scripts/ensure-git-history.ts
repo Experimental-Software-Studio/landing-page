@@ -20,12 +20,23 @@ function fetchHistory(args: string[]) {
 }
 
 const vercelBranch = process.env.VERCEL_GIT_COMMIT_REF;
+const vercelRepoOwner =
+  process.env.VERCEL_GIT_REPO_OWNER ?? process.env.VERCEL_GIT_ORG ?? "Experimental-Software-Studio";
+const vercelRepoSlug =
+  process.env.VERCEL_GIT_REPO_SLUG ?? process.env.VERCEL_GIT_REPO ?? "landing-page";
 const isShallowRepository = tryGit(["rev-parse", "--is-shallow-repository"]);
 
 if (vercelBranch) {
+  const githubRepoUrl = `https://github.com/${vercelRepoOwner}/${vercelRepoSlug}.git`;
+
   try {
-    console.log(`Fetching git history for ${vercelBranch}.`);
-    fetchHistory(["origin", vercelBranch, "--depth=1000", "--tags"]);
+    console.log(`Fetching git history for ${vercelRepoOwner}/${vercelRepoSlug}:${vercelBranch}.`);
+    fetchHistory([
+      githubRepoUrl,
+      `${vercelBranch}:refs/remotes/origin/${vercelBranch}`,
+      "--depth=1000",
+      "--tags",
+    ]);
     process.exit(0);
   } catch {
     console.warn(`Could not fetch git history for ${vercelBranch}. Continuing with checkout history.`);
