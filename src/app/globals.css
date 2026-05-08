@@ -1445,3 +1445,9 @@ button {
     display: none;
   }
 }
+
+@media (max-width: 640px) {
+  .status-spaces {
+    display: none;
+  }
+}

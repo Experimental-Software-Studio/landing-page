@@ -43,7 +43,7 @@ function toImmutableFolder(folder: MutableFolder): WorkspaceFolder {
 }
 
 export function buildWorkspaceTree(files: WorkspaceFile[]): WorkspaceFolder {
-  const root = createFolder("", "EXPERIMENTAL-SOFTWARE-STUDIO");
+  const root = createFolder("", "LANDING-PAGE");
 
   for (const file of files) {
     const segments = file.path.split("/");

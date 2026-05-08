@@ -56,7 +56,7 @@ export function StatusBar({ cursorPosition, file }: StatusBarProps) {
           Ln {editableCursorPosition.line}, Col {editableCursorPosition.column}
         </span>
       ) : null}
-      <span className="status-item">Spaces: 2</span>
+      <span className="status-item status-spaces">Spaces: 2</span>
       <span className="status-item">UTF-8</span>
       <span className="status-item">{languageLabel(file)}</span>
       <span className="status-item">

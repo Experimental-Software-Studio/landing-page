@@ -314,7 +314,7 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
           <span className="traffic traffic-minimize" />
           <span className="traffic traffic-maximize" />
         </div>
-        <div className="window-title">Experimental Software Studio - landing-page</div>
+        <div className="window-title">Experimental Software - landing-page</div>
       </header>
 
       <div className="workspace-grid">
