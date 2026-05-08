@@ -501,6 +501,26 @@ button {
   color: #bbbbbb;
 }
 
+.command-palette-input-wrap {
+  position: relative;
+}
+
+.command-palette-prefix {
+  position: absolute;
+  top: 50%;
+  left: 17px;
+  z-index: 1;
+  color: #d8d8d8;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.command-palette-input {
+  padding-left: 24px;
+}
+
 .quick-open-list {
   max-height: calc(min(62vh, 520px) - 44px);
   overflow: auto;
@@ -521,6 +541,10 @@ button {
   font-size: 13px;
   text-align: left;
   cursor: pointer;
+}
+
+.command-item {
+  grid-template-columns: 18px minmax(max-content, auto) minmax(0, 1fr);
 }
 
 .quick-open-item.active {

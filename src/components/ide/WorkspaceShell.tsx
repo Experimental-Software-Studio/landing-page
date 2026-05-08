@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useReducer,
   useRef,
   useState,
@@ -10,6 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { ActivityBar } from "./ActivityBar";
+import { CommandPalette, type CommandPaletteCommand } from "./CommandPalette";
 import { CommandPaletteHint } from "./CommandPaletteHint";
 import { EditorPane } from "./EditorPane";
 import { FileExplorer } from "./FileExplorer";
@@ -27,6 +29,7 @@ const defaultExplorerWidth = 288;
 const minExplorerWidth = 168;
 const maxExplorerWidth = 520;
 const resizeKeyboardStep = 16;
+const githubRepoUrl = "https://github.com/Experimental-Software-Studio/landing-page";
 
 function clampExplorerWidth(width: number) {
   return Math.min(maxExplorerWidth, Math.max(minExplorerWidth, width));
@@ -39,6 +42,7 @@ export function WorkspaceShell() {
   const [explorerWidth, setExplorerWidth] = useState(defaultExplorerWidth);
   const [isResizeHandleHoverActive, setIsResizeHandleHoverActive] = useState(false);
   const [quickOpenVisible, setQuickOpenVisible] = useState(false);
+  const [commandPaletteVisible, setCommandPaletteVisible] = useState(false);
   const scrollPositionsRef = useRef<Record<string, EditorScrollPosition>>({});
   const foldRangesRef = useRef<Record<string, EditorFoldRange[]>>({});
   const resizeHoverTimerRef = useRef<number | null>(null);
@@ -48,6 +52,44 @@ export function WorkspaceShell() {
   const openTabs = state.openTabs.map((fileId) => state.filesById[fileId]).filter(Boolean);
   const mode = state.editorModes[activeFile.id] ?? "code";
   const content = getFileContent(state, activeFile.id);
+  const openPinnedFile = useCallback((fileId: string) => {
+    dispatch({ type: "pinFile", fileId });
+  }, []);
+  const commandPaletteCommands = useMemo<CommandPaletteCommand[]>(
+    () => [
+      {
+        id: "github.open-repository",
+        label: "GitHub: Open Repository",
+        detail: "Experimental-Software-Studio/landing-page",
+        run: () => window.open(githubRepoUrl, "_blank", "noopener,noreferrer"),
+      },
+      {
+        id: "github.open-issues",
+        label: "GitHub: Open Issues",
+        detail: "View repo issues",
+        run: () => window.open(`${githubRepoUrl}/issues`, "_blank", "noopener,noreferrer"),
+      },
+      {
+        id: "file.open-readme",
+        label: "File: Open README",
+        detail: "content/README.md",
+        run: () => openPinnedFile("repo:content/README.md"),
+      },
+      {
+        id: "file.open-roadmap",
+        label: "File: Open Roadmap",
+        detail: "content/roadmap.md",
+        run: () => openPinnedFile("repo:content/roadmap.md"),
+      },
+      {
+        id: "file.open-contributing",
+        label: "File: Open Contributing Guide",
+        detail: "content/contributing.md",
+        run: () => openPinnedFile("repo:content/contributing.md"),
+      },
+    ],
+    [openPinnedFile],
+  );
   const getScrollPosition = useCallback(
     (fileId: string) => scrollPositionsRef.current[fileId] ?? { left: 0, top: 0 },
     [],
@@ -103,19 +145,26 @@ export function WorkspaceShell() {
   }, [clearResizeHoverTimer, explorerWidth]);
 
   useEffect(() => {
-    const openQuickOpen = (event: KeyboardEvent) => {
+    const openKeyboardPalette = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() !== "p" || (!event.metaKey && !event.ctrlKey)) {
         return;
       }
 
       event.preventDefault();
-      setQuickOpenVisible(true);
+
+      if (event.shiftKey) {
+        setQuickOpenVisible(false);
+        setCommandPaletteVisible(true);
+      } else {
+        setCommandPaletteVisible(false);
+        setQuickOpenVisible(true);
+      }
     };
 
-    window.addEventListener("keydown", openQuickOpen);
+    window.addEventListener("keydown", openKeyboardPalette);
 
     return () => {
-      window.removeEventListener("keydown", openQuickOpen);
+      window.removeEventListener("keydown", openKeyboardPalette);
     };
   }, []);
 
@@ -213,7 +262,14 @@ export function WorkspaceShell() {
           files={files}
           activeFileId={state.activeFileId}
           onClose={() => setQuickOpenVisible(false)}
-          onOpenFile={(fileId) => dispatch({ type: "pinFile", fileId })}
+          onOpenFile={openPinnedFile}
+        />
+      ) : null}
+
+      {commandPaletteVisible ? (
+        <CommandPalette
+          commands={commandPaletteCommands}
+          onClose={() => setCommandPaletteVisible(false)}
         />
       ) : null}
 
