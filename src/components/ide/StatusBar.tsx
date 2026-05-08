@@ -4,7 +4,7 @@ import type { WorkspaceFile } from "@/features/workspace/types";
 
 interface StatusBarProps {
   cursorPosition?: EditorCursorPosition;
-  file: WorkspaceFile;
+  file: WorkspaceFile | null;
 }
 
 const languageLabels: Record<WorkspaceFile["language"], string> = {
@@ -26,6 +26,18 @@ function languageLabel(file: WorkspaceFile) {
 }
 
 export function StatusBar({ cursorPosition, file }: StatusBarProps) {
+  if (!file) {
+    return (
+      <footer className="status-bar">
+        <span className="status-item">
+          <GitBranch size={14} />
+          main
+        </span>
+        <span className="status-spacer" />
+      </footer>
+    );
+  }
+
   const editableCursorPosition = file.editable
     ? (cursorPosition ?? { column: 1, line: 1 })
     : null;

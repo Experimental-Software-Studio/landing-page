@@ -114,15 +114,16 @@ describe("workspaceReducer", () => {
     expect(getFileContent(next, repoFile.id)).toBe(repoFile.content);
   });
 
-  it("keeps at least one tab open", () => {
+  it("allows every tab to be closed", () => {
     const state = createInitialWorkspaceState();
     const next = workspaceReducer(state, {
       type: "closeTab",
       fileId: readmeId,
     });
 
-    expect(next.openTabs).toEqual([readmeId]);
-    expect(next.previewTabId).toBe(readmeId);
+    expect(next.openTabs).toEqual([]);
+    expect(next.previewTabId).toBeNull();
+    expect(next.activeFileId).toBeNull();
   });
 
   it("closes other tabs around the selected tab", () => {

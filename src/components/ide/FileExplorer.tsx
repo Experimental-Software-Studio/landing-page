@@ -12,7 +12,7 @@ import {
 
 interface FileExplorerProps {
   tree: WorkspaceFolder;
-  activeFileId: string;
+  activeFileId: string | null;
   modifiedFileIds?: Set<string>;
   onSelectFile: (fileId: string) => void;
   onPinFile: (fileId: string) => void;
@@ -60,7 +60,7 @@ export function FileExplorer({
   );
 }
 
-function getInitiallyExpandedFolderIds(tree: WorkspaceFolder, activeFileId: string) {
+function getInitiallyExpandedFolderIds(tree: WorkspaceFolder, activeFileId: string | null) {
   const expandedFolderIds = new Set<string>([tree.id]);
 
   function visit(folder: WorkspaceFolder): boolean {
@@ -90,7 +90,7 @@ function getInitiallyExpandedFolderIds(tree: WorkspaceFolder, activeFileId: stri
 
 interface TreeFolderProps {
   folder: WorkspaceFolder;
-  activeFileId: string;
+  activeFileId: string | null;
   modifiedFileIds: Set<string>;
   depth: number;
   expandedFolderIds: Set<string>;
@@ -143,7 +143,7 @@ function TreeFolder({
 
 interface TreeNodeProps {
   node: WorkspaceNode;
-  activeFileId: string;
+  activeFileId: string | null;
   modifiedFileIds: Set<string>;
   depth: number;
   expandedFolderIds: Set<string>;

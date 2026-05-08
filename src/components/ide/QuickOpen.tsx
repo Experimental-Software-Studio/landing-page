@@ -6,7 +6,7 @@ import type { WorkspaceFile } from "@/features/workspace/types";
 
 interface QuickOpenProps {
   files: WorkspaceFile[];
-  activeFileId: string;
+  activeFileId: string | null;
   onClose: () => void;
   onOpenFile: (fileId: string) => void;
 }

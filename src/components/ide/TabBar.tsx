@@ -8,7 +8,7 @@ import type { WorkspaceFile } from "@/features/workspace/types";
 
 interface TabBarProps {
   tabs: WorkspaceFile[];
-  activeFileId: string;
+  activeFileId: string | null;
   previewTabId: string | null;
   modifiedFileIds?: Set<string>;
   onSelectTab: (fileId: string) => void;

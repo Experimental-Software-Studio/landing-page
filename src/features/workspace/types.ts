@@ -38,7 +38,7 @@ export interface WorkspaceState {
   filesById: Record<string, WorkspaceFile>;
   openTabs: string[];
   previewTabId: string | null;
-  activeFileId: string;
+  activeFileId: string | null;
   editorModes: Record<string, EditorMode>;
   editedContents: Record<string, string>;
 }

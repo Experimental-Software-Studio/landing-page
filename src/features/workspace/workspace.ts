@@ -82,12 +82,10 @@ export function workspaceReducer(
     case "closeTab": {
       const nextTabs = state.openTabs.filter((fileId) => fileId !== action.fileId);
 
-      if (nextTabs.length === 0) {
-        return state;
-      }
-
       const activeFileId =
-        state.activeFileId === action.fileId ? nextTabs[nextTabs.length - 1] : state.activeFileId;
+        state.activeFileId === action.fileId
+          ? nextTabs[nextTabs.length - 1] ?? null
+          : state.activeFileId;
 
       return {
         ...state,
@@ -118,7 +116,10 @@ export function workspaceReducer(
       }
 
       const nextTabs = state.openTabs.slice(0, tabIndex + 1);
-      const activeFileId = nextTabs.includes(state.activeFileId) ? state.activeFileId : action.fileId;
+      const activeFileId =
+        state.activeFileId && nextTabs.includes(state.activeFileId)
+          ? state.activeFileId
+          : action.fileId;
 
       return {
         ...state,

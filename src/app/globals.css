@@ -1061,6 +1061,28 @@ button {
   min-height: 0;
 }
 
+.empty-editor-pane {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.empty-editor-mark {
+  aspect-ratio: 1;
+  width: min(34vw, 360px);
+  min-width: 180px;
+  background-image: url("/transparent-logo.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
 .editor-toolbar {
   display: flex;
   align-items: center;
@@ -1322,13 +1344,11 @@ button {
   }
 
   .workspace-grid {
-    grid-template-columns:
-      42px minmax(168px, min(var(--explorer-width, 288px), 34vw)) 0
-      minmax(0, 1fr);
+    grid-template-columns: 48px var(--explorer-width, 288px) 0 minmax(0, 1fr);
   }
 
   .explorer-collapsed .workspace-grid {
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 48px minmax(0, 1fr);
   }
 
   .activity-bar {
@@ -1345,6 +1365,30 @@ button {
 
   .explorer-collapsed .editor-workbench {
     grid-column: 2;
+  }
+
+  .sidebar-auto .workspace-grid {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .sidebar-auto .explorer,
+  .sidebar-auto .search-panel,
+  .sidebar-auto .source-panel,
+  .sidebar-auto .explorer-resizer {
+    display: none;
+  }
+
+  .sidebar-auto .editor-workbench {
+    grid-column: 2;
+  }
+
+  .sidebar-auto .activity-button.active {
+    border-left-color: transparent;
+    color: #bdbdbd;
+  }
+
+  .sidebar-auto .activity-button.active:hover {
+    color: #ffffff;
   }
 
   .editor-toolbar {

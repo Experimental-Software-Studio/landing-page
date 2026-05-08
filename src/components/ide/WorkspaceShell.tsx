@@ -41,6 +41,8 @@ const minExplorerWidth = 168;
 const maxExplorerWidth = 520;
 const resizeKeyboardStep = 16;
 const githubRepoUrl = "https://github.com/Experimental-Software-Studio/landing-page";
+const mobileSidebarQuery = "(max-width: 820px)";
+type SidebarMode = "auto" | "open" | "closed";
 
 function clampExplorerWidth(width: number) {
   return Math.min(maxExplorerWidth, Math.max(minExplorerWidth, width));
@@ -73,7 +75,7 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
     createInitialWorkspaceState(undefined, initialFileId),
   );
   const [explorerWidth, setExplorerWidth] = useState(defaultExplorerWidth);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>("auto");
   const [activeActivityView, setActiveActivityView] = useState<ActivityView>("explorer");
   const [searchQuery, setSearchQuery] = useState("");
   const [revealRequest, setRevealRequest] = useState<EditorRevealRequest | null>(null);
@@ -87,7 +89,7 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
   const [cursorPositions, setCursorPositions] = useState<Record<string, EditorCursorPosition>>({});
   const resizeHoverTimerRef = useRef<number | null>(null);
 
-  const activeFile = state.filesById[state.activeFileId];
+  const activeFile = state.activeFileId ? state.filesById[state.activeFileId] : null;
   const files = Object.values(state.filesById);
   const searchableFiles = files.map((file) => ({
     ...file,
@@ -102,8 +104,8 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
     [changedFiles],
   );
   const openTabs = state.openTabs.map((fileId) => state.filesById[fileId]).filter(Boolean);
-  const mode = state.editorModes[activeFile.id] ?? "code";
-  const content = getFileContent(state, activeFile.id);
+  const mode = activeFile ? state.editorModes[activeFile.id] ?? "code" : "code";
+  const content = activeFile ? getFileContent(state, activeFile.id) : "";
   const openPinnedFile = useCallback((fileId: string) => {
     dispatch({ type: "pinFile", fileId });
   }, []);
@@ -225,15 +227,18 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
   }, [clearResizeHoverTimer, explorerWidth]);
   const selectActivityView = useCallback(
     (view: ActivityView) => {
-      if (sidebarVisible && activeActivityView === view) {
-        setSidebarVisible(false);
+      const autoSidebarOpen = !window.matchMedia(mobileSidebarQuery).matches;
+      const sidebarOpen = sidebarMode === "open" || (sidebarMode === "auto" && autoSidebarOpen);
+
+      if (sidebarOpen && activeActivityView === view) {
+        setSidebarMode("closed");
         return;
       }
 
       setActiveActivityView(view);
-      setSidebarVisible(true);
+      setSidebarMode("open");
     },
-    [activeActivityView, sidebarVisible],
+    [activeActivityView, sidebarMode],
   );
 
   useEffect(() => {
@@ -252,6 +257,10 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
   }, [pathname, state.activeFileId]);
 
   useEffect(() => {
+    if (!state.activeFileId) {
+      return;
+    }
+
     const route = contentRouteForFileId(state.activeFileId);
 
     if (!route || route.route === pathname) {
@@ -288,7 +297,13 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
 
   return (
     <main
-      className={sidebarVisible ? "ide-shell" : "ide-shell explorer-collapsed"}
+      className={
+        sidebarMode === "closed"
+          ? "ide-shell explorer-collapsed"
+          : sidebarMode === "open"
+            ? "ide-shell sidebar-open"
+            : "ide-shell sidebar-auto"
+      }
       style={{ "--explorer-width": `${explorerWidth}px` } as CSSProperties}
     >
       <header className="title-bar">
@@ -303,11 +318,11 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
       <div className="workspace-grid">
         <ActivityBar
           activeView={activeActivityView}
-          sidebarVisible={sidebarVisible}
+          sidebarVisible={sidebarMode !== "closed"}
           sourceControlCount={changedFiles.length}
           onSelectView={selectActivityView}
         />
-        {sidebarVisible ? (
+        {sidebarMode !== "closed" ? (
           <>
             {activeActivityView === "explorer" ? (
               <FileExplorer
@@ -376,42 +391,46 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
               dispatch({ type: "reorderTab", fileId, targetIndex })
             }
           />
-          <EditorPane
-            file={activeFile}
-            value={content}
-            mode={mode}
-            onModeChange={(nextMode) =>
-              dispatch({ type: "setMode", fileId: activeFile.id, mode: nextMode })
-            }
-            onChange={(nextContent) =>
-              dispatch({
-                type: "updateContent",
-                fileId: activeFile.id,
-                content: nextContent,
-              })
-            }
-            getEditorState={getEditorState}
-            getScrollPosition={getScrollPosition}
-            onEditorStateChange={(fileId, editorState) => {
-              editorStatesRef.current[fileId] = editorState;
-            }}
-            onScrollPositionChange={(fileId, position) => {
-              scrollPositionsRef.current[fileId] = position;
-            }}
-            getFoldRanges={getFoldRanges}
-            onFoldRangesChange={(fileId, ranges) => {
-              foldRangesRef.current[fileId] = ranges;
-            }}
-            onCursorPositionChange={(fileId, position) => {
-              setCursorPositions((current) =>
-                current[fileId]?.line === position.line &&
-                current[fileId]?.column === position.column
-                  ? current
-                  : { ...current, [fileId]: position },
-              );
-            }}
-            revealRequest={revealRequest}
-          />
+          {activeFile ? (
+            <EditorPane
+              file={activeFile}
+              value={content}
+              mode={mode}
+              onModeChange={(nextMode) =>
+                dispatch({ type: "setMode", fileId: activeFile.id, mode: nextMode })
+              }
+              onChange={(nextContent) =>
+                dispatch({
+                  type: "updateContent",
+                  fileId: activeFile.id,
+                  content: nextContent,
+                })
+              }
+              getEditorState={getEditorState}
+              getScrollPosition={getScrollPosition}
+              onEditorStateChange={(fileId, editorState) => {
+                editorStatesRef.current[fileId] = editorState;
+              }}
+              onScrollPositionChange={(fileId, position) => {
+                scrollPositionsRef.current[fileId] = position;
+              }}
+              getFoldRanges={getFoldRanges}
+              onFoldRangesChange={(fileId, ranges) => {
+                foldRangesRef.current[fileId] = ranges;
+              }}
+              onCursorPositionChange={(fileId, position) => {
+                setCursorPositions((current) =>
+                  current[fileId]?.line === position.line &&
+                  current[fileId]?.column === position.column
+                    ? current
+                    : { ...current, [fileId]: position },
+                );
+              }}
+              revealRequest={revealRequest}
+            />
+          ) : (
+            <EmptyEditorPane />
+          )}
         </div>
       </div>
 
@@ -433,8 +452,16 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
 
       <StatusBar
         file={activeFile}
-        cursorPosition={cursorPositions[activeFile.id]}
+        cursorPosition={activeFile ? cursorPositions[activeFile.id] : undefined}
       />
     </main>
+  );
+}
+
+function EmptyEditorPane() {
+  return (
+    <section className="empty-editor-pane" aria-label="No open editors">
+      <div className="empty-editor-mark" aria-hidden="true" />
+    </section>
   );
 }
