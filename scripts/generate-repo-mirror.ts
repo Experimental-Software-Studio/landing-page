@@ -75,9 +75,17 @@ function fileId(path: string) {
 }
 
 function gitHistory() {
+  const branch = currentBranch();
+  const historyRef = historyRefForBranch(branch);
   const output = execFileSync(
     "git",
-    ["log", "-40", "--date=short", "--pretty=format:%H%x1f%h%x1f%s%x1f%an%x1f%ad%x1f%D%x1e"],
+    [
+      "log",
+      "-40",
+      historyRef,
+      "--date=short",
+      "--pretty=format:%H%x1f%h%x1f%s%x1f%an%x1f%ad%x1f%D%x1e",
+    ],
     { encoding: "utf8" },
   );
 
@@ -103,7 +111,24 @@ function gitHistory() {
 }
 
 function currentBranch() {
-  return execFileSync("git", ["branch", "--show-current"], { encoding: "utf8" }).trim() || "main";
+  return (
+    process.env.VERCEL_GIT_COMMIT_REF ??
+    (execFileSync("git", ["branch", "--show-current"], { encoding: "utf8" }).trim() || "main")
+  );
+}
+
+function historyRefForBranch(branch: string) {
+  const remoteBranch = `origin/${branch}`;
+
+  try {
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", remoteBranch], {
+      stdio: "ignore",
+    });
+
+    return remoteBranch;
+  } catch {
+    return "HEAD";
+  }
 }
 
 const mirroredFiles = gitFiles().map((path) => {
@@ -127,9 +152,10 @@ const source = `import type { WorkspaceFile } from "@/features/workspace/types";
 
 export const repoMirrorFiles: WorkspaceFile[] = ${JSON.stringify(mirroredFiles, null, 2)};
 `;
+const gitHistoryCommits = gitHistory();
 const gitHistorySource = `import type { GitHistoryCommit } from "@/features/git/types";
 
-export const gitHistoryCommits: GitHistoryCommit[] = ${JSON.stringify(gitHistory(), null, 2)};
+export const gitHistoryCommits: GitHistoryCommit[] = ${JSON.stringify(gitHistoryCommits, null, 2)};
 export const gitCurrentBranch = ${JSON.stringify(currentBranch())};
 `;
 
@@ -138,4 +164,4 @@ writeFileSync(outputPath, source);
 writeFileSync(gitHistoryOutputPath, gitHistorySource);
 
 console.log(`Generated ${mirroredFiles.length} mirrored repo files at ${outputPath}`);
-console.log(`Generated git history at ${gitHistoryOutputPath}`);
+console.log(`Generated ${gitHistoryCommits.length} git history commits at ${gitHistoryOutputPath}`);

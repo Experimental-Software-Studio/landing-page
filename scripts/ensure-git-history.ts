@@ -15,21 +15,36 @@ function tryGit(args: string[]) {
   }
 }
 
+function fetchHistory(args: string[]) {
+  execFileSync("git", ["fetch", ...args], { stdio: "inherit" });
+}
+
+const vercelBranch = process.env.VERCEL_GIT_COMMIT_REF;
 const isShallowRepository = tryGit(["rev-parse", "--is-shallow-repository"]);
+
+if (vercelBranch) {
+  try {
+    console.log(`Fetching git history for ${vercelBranch}.`);
+    fetchHistory(["origin", vercelBranch, "--depth=1000", "--tags"]);
+    process.exit(0);
+  } catch {
+    console.warn(`Could not fetch git history for ${vercelBranch}. Continuing with checkout history.`);
+    process.exit(0);
+  }
+}
 
 if (isShallowRepository !== "true") {
   process.exit(0);
 }
 
 try {
-  execFileSync("git", ["fetch", "--unshallow", "--tags"], { stdio: "inherit" });
+  console.log("Unshallowing git history.");
+  fetchHistory(["--unshallow", "--tags"]);
 } catch {
   console.warn("Could not unshallow git history. Trying a deeper fetch instead.");
 
   try {
-    execFileSync("git", ["fetch", "--all", "--tags", "--depth=1000"], {
-      stdio: "inherit",
-    });
+    fetchHistory(["--all", "--tags", "--depth=1000"]);
   } catch {
     console.warn("Could not fetch full git history. Continuing with checkout history.");
   }
