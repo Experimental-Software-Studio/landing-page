@@ -20,9 +20,9 @@ describe("FileExplorer", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /philosophy.md/i }));
+    await user.click(screen.getByRole("button", { name: /ABOUT.md/i }));
 
-    expect(onSelectFile).toHaveBeenCalledWith("repo:content/philosophy.md");
+    expect(onSelectFile).toHaveBeenCalledWith("repo:content/ABOUT.md");
   });
 
   it("preserves nested folder expansion state when a parent is collapsed", async () => {
@@ -62,8 +62,8 @@ describe("FileExplorer", () => {
       />,
     );
 
-    await user.dblClick(screen.getByRole("button", { name: /philosophy.md/i }));
+    await user.dblClick(screen.getByRole("button", { name: /ABOUT.md/i }));
 
-    expect(onPinFile).toHaveBeenCalledWith("repo:content/philosophy.md");
+    expect(onPinFile).toHaveBeenCalledWith("repo:content/ABOUT.md");
   });
 });

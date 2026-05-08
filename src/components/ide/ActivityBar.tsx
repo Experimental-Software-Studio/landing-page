@@ -1,14 +1,20 @@
 import { Files, GitBranch, Search, Settings } from "lucide-react";
 
-export type ActivityView = "explorer" | "search";
+export type ActivityView = "explorer" | "search" | "source-control";
 
 interface ActivityBarProps {
   activeView: ActivityView;
   sidebarVisible: boolean;
+  sourceControlCount: number;
   onSelectView: (view: ActivityView) => void;
 }
 
-export function ActivityBar({ activeView, sidebarVisible, onSelectView }: ActivityBarProps) {
+export function ActivityBar({
+  activeView,
+  sidebarVisible,
+  sourceControlCount,
+  onSelectView,
+}: ActivityBarProps) {
   return (
     <nav className="activity-bar" aria-label="Workspace activity">
       <button
@@ -37,11 +43,20 @@ export function ActivityBar({ activeView, sidebarVisible, onSelectView }: Activi
       </button>
       <button
         type="button"
-        className="activity-button"
+        className={
+          sidebarVisible && activeView === "source-control"
+            ? "activity-button active"
+            : "activity-button"
+        }
         aria-label="Source control"
+        aria-pressed={sidebarVisible && activeView === "source-control"}
         title="Source control"
+        onClick={() => onSelectView("source-control")}
       >
         <GitBranch size={21} />
+        {sourceControlCount > 0 ? (
+          <span className="activity-badge">{sourceControlCount}</span>
+        ) : null}
       </button>
       <button
         type="button"

@@ -1,7 +1,7 @@
 # Contact
 
-This is intentionally written as a file because the whole site is a project.
+Email: [hello@experimental.software](mailto:hello@experimental.software)
 
-- GitHub: Experimental Software Studio
-- Notes: open an issue when the repo is public
-- Best first contribution: improve a content file or add a focused component test
+GitHub: [Experimental-Software-Studio](https://github.com/Experimental-Software-Studio)
+
+X: [@alexanderqchen](https://x.com/alexanderqchen)

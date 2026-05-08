@@ -3,8 +3,10 @@
 import { ChevronRight, Eye, FileCode2, Lock } from "lucide-react";
 import {
   CodeEditor,
+  type EditorCursorPosition,
   type EditorRevealRequest,
   type EditorFoldRange,
+  type EditorSerializedState,
   type EditorScrollPosition,
 } from "@/features/editor/CodeEditor";
 import { MarkdownPreview } from "@/features/preview/MarkdownPreview";
@@ -16,10 +18,13 @@ interface EditorPaneProps {
   mode: EditorMode;
   onModeChange: (mode: EditorMode) => void;
   onChange: (value: string) => void;
+  getEditorState: (fileId: string) => EditorSerializedState | null;
   getScrollPosition: (fileId: string) => EditorScrollPosition;
+  onEditorStateChange: (fileId: string, state: EditorSerializedState) => void;
   onScrollPositionChange: (fileId: string, position: EditorScrollPosition) => void;
   getFoldRanges: (fileId: string) => EditorFoldRange[];
   onFoldRangesChange: (fileId: string, ranges: EditorFoldRange[]) => void;
+  onCursorPositionChange: (fileId: string, position: EditorCursorPosition) => void;
   revealRequest: EditorRevealRequest | null;
 }
 
@@ -29,10 +34,13 @@ export function EditorPane({
   mode,
   onModeChange,
   onChange,
+  getEditorState,
   getScrollPosition,
+  onEditorStateChange,
   onScrollPositionChange,
   getFoldRanges,
   onFoldRangesChange,
+  onCursorPositionChange,
   revealRequest,
 }: EditorPaneProps) {
   const canPreview = file.renderer === "markdown";
@@ -85,15 +93,19 @@ export function EditorPane({
           <MarkdownPreview markdown={value} />
         ) : (
           <CodeEditor
+            key={file.id}
             fileId={file.id}
             value={value}
             language={file.language}
             readOnly={!file.editable}
             onChange={onChange}
+            getEditorState={getEditorState}
             getScrollPosition={getScrollPosition}
+            onEditorStateChange={onEditorStateChange}
             onScrollPositionChange={onScrollPositionChange}
             getFoldRanges={getFoldRanges}
             onFoldRangesChange={onFoldRangesChange}
+            onCursorPositionChange={onCursorPositionChange}
             revealRequest={revealRequest}
           />
         )}

@@ -19,6 +19,20 @@ const value = 1;
     expect(html).toContain("const value = 1;");
   });
 
+  it("renders unordered and ordered lists", () => {
+    const html = renderMarkdown(`- One
+- Two
+
+1. First
+2. Second
+`);
+
+    expect(html).toContain("<ul>");
+    expect(html).toContain("<li>One</li>");
+    expect(html).toContain("<ol>");
+    expect(html).toContain("<li>First</li>");
+  });
+
   it("sanitizes unsafe HTML", () => {
     const html = renderMarkdown(`<script>alert("x")</script>
 

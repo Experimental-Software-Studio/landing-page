@@ -13,6 +13,7 @@
     "generate:repo": "node --import tsx scripts/generate-repo-mirror.ts"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-css": "latest",
     "@codemirror/lang-html": "latest",
     "@codemirror/lang-javascript": "latest",

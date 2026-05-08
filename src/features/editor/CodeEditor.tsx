@@ -1,11 +1,13 @@
 "use client";
 
 import { foldEffect, foldGutter, foldedRanges, unfoldEffect } from "@codemirror/language";
-import { EditorState } from "@codemirror/state";
+import { history, historyField, historyKeymap } from "@codemirror/commands";
+import { EditorState, Transaction } from "@codemirror/state";
 import {
   EditorView,
   ViewPlugin,
   highlightActiveLineGutter,
+  keymap,
   lineNumbers,
   type ViewUpdate,
 } from "@codemirror/view";
@@ -22,10 +24,13 @@ interface CodeEditorProps {
   language: WorkspaceLanguage;
   readOnly: boolean;
   onChange: (value: string) => void;
+  getEditorState: (fileId: string) => EditorSerializedState | null;
   getScrollPosition: (fileId: string) => EditorScrollPosition;
+  onEditorStateChange: (fileId: string, state: EditorSerializedState) => void;
   onScrollPositionChange: (fileId: string, position: EditorScrollPosition) => void;
   getFoldRanges: (fileId: string) => EditorFoldRange[];
   onFoldRangesChange: (fileId: string, ranges: EditorFoldRange[]) => void;
+  onCursorPositionChange: (fileId: string, position: EditorCursorPosition) => void;
   revealRequest: EditorRevealRequest | null;
 }
 
@@ -40,6 +45,13 @@ export interface EditorFoldRange {
   from: number;
   to: number;
 }
+
+export interface EditorCursorPosition {
+  column: number;
+  line: number;
+}
+
+export type EditorSerializedState = unknown;
 
 export interface EditorRevealRequest {
   fileId: string;
@@ -74,6 +86,7 @@ const activeLineTheme = EditorView.theme({
 const restoreScrollMeasureKey = {};
 const activeVisualLineMeasureKey = {};
 const scrollBeyondLastLineExtraPx = 1;
+const editorStateFields = { history: historyField };
 
 interface ActiveVisualLineMeasure {
   height: number;
@@ -198,10 +211,11 @@ const foldingTheme = EditorView.baseTheme({
     opacity: "0",
     transition: "opacity 120ms ease",
   },
-  ".cm-gutters:hover .cm-foldGutter .cm-gutterElement, .cm-foldGutter .cm-gutterElement:hover": {
-    opacity: "1",
+  ".cm-foldGutter > .cm-gutterElement:first-child": {
+    opacity: "0 !important",
+    pointerEvents: "none",
   },
-  ".cm-foldGutter .cm-gutterElement:has(.is-folded)": {
+  ".cm-foldGutter:hover .cm-gutterElement, .cm-foldGutter .cm-gutterElement:hover": {
     opacity: "1",
   },
   ".cm-fold-chevron": {
@@ -261,6 +275,16 @@ function getValidFoldRanges(view: EditorView, ranges: EditorFoldRange[]) {
   return ranges.filter(({ from, to }) => from < to && to <= view.state.doc.length);
 }
 
+function getEditorCursorPosition(view: EditorView): EditorCursorPosition {
+  const head = view.state.selection.main.head;
+  const line = view.state.doc.lineAt(head);
+
+  return {
+    column: head - line.from + 1,
+    line: line.number,
+  };
+}
+
 function restoreEditorFoldRanges(view: EditorView, ranges: EditorFoldRange[]) {
   const currentRanges = getEditorFoldRanges(view);
   const effects = [
@@ -311,26 +335,102 @@ function restoreEditorScroll(
   });
 }
 
+function editorExtensions(
+  language: WorkspaceLanguage,
+  readOnly: boolean,
+  updateListener: (update: ViewUpdate) => void,
+) {
+  return [
+    lineNumbers(),
+    highlightActiveLineGutter(),
+    history({ newGroupDelay: 750 }),
+    keymap.of(historyKeymap),
+    foldGutter({
+      markerDOM: foldMarker,
+    }),
+    foldingTheme,
+    vscodeDark,
+    indentationMarkers({
+      highlightActiveBlock: false,
+      hideFirstIndent: true,
+      markerType: "codeOnly",
+      thickness: 1,
+      colors: {
+        dark: "#404040",
+        activeDark: "#707070",
+      },
+    }),
+    activeVisualLine,
+    activeLineTheme,
+    language === "markdown" ? [] : bracketPairColors(),
+    getCodeMirrorLanguage(language),
+    EditorState.readOnly.of(readOnly),
+    EditorView.editable.of(!readOnly),
+    language === "markdown" ? EditorView.lineWrapping : horizontalScrollTheme,
+    scrollBeyondLastLine,
+    EditorView.updateListener.of(updateListener),
+  ];
+}
+
+function createEditorState(
+  fileId: string,
+  value: string,
+  language: WorkspaceLanguage,
+  readOnly: boolean,
+  getEditorState: (fileId: string) => EditorSerializedState | null,
+  updateListener: (update: ViewUpdate) => void,
+) {
+  const extensions = editorExtensions(language, readOnly, updateListener);
+  const serializedState = getEditorState(fileId);
+
+  if (serializedState) {
+    try {
+      const restoredState = EditorState.fromJSON(
+        serializedState,
+        { extensions },
+        editorStateFields,
+      );
+
+      if (restoredState.doc.toString() === value) {
+        return restoredState;
+      }
+    } catch {
+      // Ignore invalid cached state and fall back to a fresh editor state.
+    }
+  }
+
+  return EditorState.create({
+    doc: value,
+    extensions,
+  });
+}
+
 export function CodeEditor({
   fileId,
   value,
   language,
   readOnly,
   onChange,
+  getEditorState,
   getScrollPosition,
+  onEditorStateChange,
   onScrollPositionChange,
   getFoldRanges,
   onFoldRangesChange,
+  onCursorPositionChange,
   revealRequest,
 }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const valueRef = useRef(value);
+  const getEditorStateRef = useRef(getEditorState);
   const getScrollPositionRef = useRef(getScrollPosition);
+  const onEditorStateChangeRef = useRef(onEditorStateChange);
   const onScrollPositionChangeRef = useRef(onScrollPositionChange);
   const getFoldRangesRef = useRef(getFoldRanges);
   const onFoldRangesChangeRef = useRef(onFoldRangesChange);
+  const onCursorPositionChangeRef = useRef(onCursorPositionChange);
   const fileIdRef = useRef(fileId);
   const suppressScrollSaveRef = useRef(false);
   const suppressFoldSaveRef = useRef(false);
@@ -340,6 +440,14 @@ export function CodeEditor({
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    getEditorStateRef.current = getEditorState;
+  }, [getEditorState]);
+
+  useEffect(() => {
+    onEditorStateChangeRef.current = onEditorStateChange;
+  }, [onEditorStateChange]);
 
   useLayoutEffect(() => {
     valueRef.current = value;
@@ -361,11 +469,16 @@ export function CodeEditor({
     onFoldRangesChangeRef.current = onFoldRangesChange;
   }, [onFoldRangesChange]);
 
+  useEffect(() => {
+    onCursorPositionChangeRef.current = onCursorPositionChange;
+  }, [onCursorPositionChange]);
+
   useLayoutEffect(() => {
     const view = viewRef.current;
     const previousFileId = fileIdRef.current;
 
     if (view && previousFileId !== fileId) {
+      onEditorStateChangeRef.current(previousFileId, view.state.toJSON(editorStateFields));
       onScrollPositionChangeRef.current(previousFileId, getEditorScrollPosition(view));
       onFoldRangesChangeRef.current(previousFileId, getEditorFoldRanges(view));
     }
@@ -382,47 +495,40 @@ export function CodeEditor({
 
     container.ownerDocument.getSelection()?.removeAllRanges();
 
+    const updateListener = (update: ViewUpdate) => {
+      if (update.docChanged && !readOnly && !suppressChangeRef.current) {
+        onChangeRef.current(update.state.doc.toString());
+      }
+
+      if (!suppressFoldSaveRef.current) {
+        onFoldRangesChangeRef.current(fileIdRef.current, getEditorFoldRanges(update.view));
+      }
+
+      if (update.docChanged || update.selectionSet) {
+        onEditorStateChangeRef.current(
+          fileIdRef.current,
+          update.state.toJSON(editorStateFields),
+        );
+      }
+
+      if (update.selectionSet || update.docChanged) {
+        onCursorPositionChangeRef.current(
+          fileIdRef.current,
+          getEditorCursorPosition(update.view),
+        );
+      }
+    };
+
     const view = new EditorView({
       parent: container,
-      state: EditorState.create({
-        doc: valueRef.current,
-        extensions: [
-          lineNumbers(),
-          highlightActiveLineGutter(),
-          foldGutter({
-            markerDOM: foldMarker,
-          }),
-          foldingTheme,
-          vscodeDark,
-          indentationMarkers({
-            highlightActiveBlock: false,
-            hideFirstIndent: true,
-            markerType: "codeOnly",
-            thickness: 1,
-            colors: {
-              dark: "#404040",
-              activeDark: "#707070",
-            },
-          }),
-          activeVisualLine,
-          activeLineTheme,
-          language === "markdown" ? [] : bracketPairColors(),
-          getCodeMirrorLanguage(language),
-          EditorState.readOnly.of(readOnly),
-          EditorView.editable.of(!readOnly),
-          language === "markdown" ? EditorView.lineWrapping : horizontalScrollTheme,
-          scrollBeyondLastLine,
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged && !readOnly && !suppressChangeRef.current) {
-              onChangeRef.current(update.state.doc.toString());
-            }
-
-            if (!suppressFoldSaveRef.current) {
-              onFoldRangesChangeRef.current(fileIdRef.current, getEditorFoldRanges(update.view));
-            }
-          }),
-        ],
-      }),
+      state: createEditorState(
+        fileId,
+        valueRef.current,
+        language,
+        readOnly,
+        getEditorStateRef.current,
+        updateListener,
+      ),
     });
 
     viewRef.current = view;
@@ -435,15 +541,24 @@ export function CodeEditor({
     };
 
     view.scrollDOM.addEventListener("scroll", saveScrollPosition, { passive: true });
+    onCursorPositionChangeRef.current(fileIdRef.current, getEditorCursorPosition(view));
+    view.focus();
+    const focusFrame = requestAnimationFrame(() => {
+      if (viewRef.current === view) {
+        view.focus();
+      }
+    });
 
     return () => {
+      cancelAnimationFrame(focusFrame);
       saveScrollPosition();
+      onEditorStateChangeRef.current(fileIdRef.current, view.state.toJSON(editorStateFields));
       onFoldRangesChangeRef.current(fileIdRef.current, getEditorFoldRanges(view));
       view.scrollDOM.removeEventListener("scroll", saveScrollPosition);
       view.destroy();
       viewRef.current = null;
     };
-  }, [language, readOnly]);
+  }, [fileId, language, readOnly]);
 
   useLayoutEffect(() => {
     const view = viewRef.current;
@@ -461,6 +576,7 @@ export function CodeEditor({
       try {
         view.dispatch({
           changes: { from: 0, to: current.length, insert: value },
+          annotations: Transaction.addToHistory.of(false),
         });
       } finally {
         suppressChangeRef.current = false;
@@ -508,6 +624,7 @@ export function CodeEditor({
         }),
       });
       view.focus();
+      onCursorPositionChangeRef.current(fileId, getEditorCursorPosition(view));
       onScrollPositionChangeRef.current(fileId, getEditorScrollPosition(view));
       suppressScrollSaveRef.current = false;
     });

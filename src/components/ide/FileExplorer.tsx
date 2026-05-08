@@ -13,6 +13,7 @@ import {
 interface FileExplorerProps {
   tree: WorkspaceFolder;
   activeFileId: string;
+  modifiedFileIds?: Set<string>;
   onSelectFile: (fileId: string) => void;
   onPinFile: (fileId: string) => void;
 }
@@ -20,6 +21,7 @@ interface FileExplorerProps {
 export function FileExplorer({
   tree,
   activeFileId,
+  modifiedFileIds = new Set(),
   onSelectFile,
   onPinFile,
 }: FileExplorerProps) {
@@ -47,6 +49,7 @@ export function FileExplorer({
       <TreeFolder
         folder={tree}
         activeFileId={activeFileId}
+        modifiedFileIds={modifiedFileIds}
         depth={0}
         expandedFolderIds={expandedFolderIds}
         onSelectFile={onSelectFile}
@@ -88,6 +91,7 @@ function getInitiallyExpandedFolderIds(tree: WorkspaceFolder, activeFileId: stri
 interface TreeFolderProps {
   folder: WorkspaceFolder;
   activeFileId: string;
+  modifiedFileIds: Set<string>;
   depth: number;
   expandedFolderIds: Set<string>;
   onSelectFile: (fileId: string) => void;
@@ -98,6 +102,7 @@ interface TreeFolderProps {
 function TreeFolder({
   folder,
   activeFileId,
+  modifiedFileIds,
   depth,
   expandedFolderIds,
   onSelectFile,
@@ -123,6 +128,7 @@ function TreeFolder({
               key={child.id}
               node={child}
               activeFileId={activeFileId}
+              modifiedFileIds={modifiedFileIds}
               depth={depth + 1}
               expandedFolderIds={expandedFolderIds}
               onSelectFile={onSelectFile}
@@ -138,6 +144,7 @@ function TreeFolder({
 interface TreeNodeProps {
   node: WorkspaceNode;
   activeFileId: string;
+  modifiedFileIds: Set<string>;
   depth: number;
   expandedFolderIds: Set<string>;
   onSelectFile: (fileId: string) => void;
@@ -148,6 +155,7 @@ interface TreeNodeProps {
 function TreeNode({
   node,
   activeFileId,
+  modifiedFileIds,
   depth,
   expandedFolderIds,
   onSelectFile,
@@ -159,6 +167,7 @@ function TreeNode({
       <TreeFolder
         folder={node}
         activeFileId={activeFileId}
+        modifiedFileIds={modifiedFileIds}
         depth={depth}
         expandedFolderIds={expandedFolderIds}
         onSelectFile={onSelectFile}
@@ -168,16 +177,19 @@ function TreeNode({
     );
   }
 
+  const modified = modifiedFileIds.has(node.id);
+
   return (
     <button
       type="button"
-      className={clsx("tree-row file-row", node.id === activeFileId && "active")}
+      className={clsx("tree-row file-row", node.id === activeFileId && "active", modified && "modified")}
       style={{ paddingLeft: 10 + depth * 14 }}
       onClick={() => onSelectFile(node.id)}
       onDoubleClick={() => onPinFile(node.id)}
     >
       <SetiFileIcon fileName={node.name} />
-      <span>{node.name}</span>
+      <span className="file-row-name">{node.name}</span>
+      {modified ? <span className="file-row-status">M</span> : null}
     </button>
   );
 }

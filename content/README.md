@@ -1,16 +1,17 @@
-# Experimental Software Studio
+# Experimental Software
 
-This landing page is a tiny workspace. The files are the story, the editor is the interface, and the page is honest about being built out of the same pieces it shows.
+A software lab building tools, products, and internet experiments.
 
-Try changing this sentence, then switch to Preview.
+_Founded and run by Alexander Chen._
 
-## What this is
+## Start here
 
-- A VS Code-inspired landing page
-- An editable markdown document system
-- A readable open-source codebase
-- A place to make technical peers pause for a second
+- [Projects](./PROJECTS.md)
+- [Website](./WEBSITE.md)
+- [About](./ABOUT.md)
+- [Contact](./CONTACT.md)
 
-## What this is not
+## Featured projects
 
-This is not a cloud IDE, a terminal emulator, or a package runner. It is a focused browser workspace for narrative, source browsing, and small acts of interaction.
+- [TypeChinese](https://typechinese.io) - Chinese typing practice and typing tests
+- [Orb UI](https://orb-ui.com/) - open-source component library for voice agents

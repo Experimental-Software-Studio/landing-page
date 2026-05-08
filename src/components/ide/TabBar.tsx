@@ -10,6 +10,7 @@ interface TabBarProps {
   tabs: WorkspaceFile[];
   activeFileId: string;
   previewTabId: string | null;
+  modifiedFileIds?: Set<string>;
   onSelectTab: (fileId: string) => void;
   onPinTab: (fileId: string) => void;
   onCloseTab: (fileId: string) => void;
@@ -34,6 +35,7 @@ export function TabBar({
   tabs,
   activeFileId,
   previewTabId,
+  modifiedFileIds = new Set(),
   onSelectTab,
   onPinTab,
   onCloseTab,
@@ -124,84 +126,90 @@ export function TabBar({
           setDropIndicator(null);
         }}
       >
-        {tabs.map((file, index) => (
-          <button
-            key={file.id}
-            type="button"
-            role="tab"
-            draggable
-            aria-selected={file.id === activeFileId}
-            className={clsx(
-              "tab",
-              file.id === activeFileId && "active",
-              file.id === previewTabId && "preview",
-              file.id === draggedFileId && "dragging",
-              dropIndicator?.fileId === file.id &&
-                (dropIndicator.side === "before" ? "drop-before" : "drop-after"),
-            )}
-            onPointerDown={() => onSelectTab(file.id)}
-            onClick={() => onSelectTab(file.id)}
-            onDoubleClick={() => onPinTab(file.id)}
-            onContextMenu={(event) => {
-              event.preventDefault();
-              setContextMenu({ fileId: file.id, x: event.clientX, y: event.clientY });
-            }}
-            onDragStart={(event) => {
-              setDraggedFileId(file.id);
-              setContextMenu(null);
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", file.id);
+        {tabs.map((file, index) => {
+          const modified = modifiedFileIds.has(file.id);
 
-              const dragPreview = event.currentTarget.cloneNode(true) as HTMLElement;
-              dragPreview.classList.add("tab-drag-preview");
-              event.currentTarget.ownerDocument.body.append(dragPreview);
-              event.dataTransfer.setDragImage(dragPreview, 0, 0);
-
-              requestAnimationFrame(() => {
-                dragPreview.remove();
-              });
-            }}
-            onDragEnd={() => {
-              setDraggedFileId(null);
-              setDropIndicator(null);
-            }}
-            onDragOver={(event) => {
-              if (!draggedFileId || draggedFileId === file.id) {
-                return;
-              }
-
-              event.preventDefault();
-
-              const rect = event.currentTarget.getBoundingClientRect();
-              const side = event.clientX < rect.left + rect.width / 2 ? "before" : "after";
-              const targetIndex = side === "before" ? index : index + 1;
-
-              setDropIndicator({ fileId: file.id, side, targetIndex });
-            }}
-          >
-            <SetiFileIcon fileName={file.name} />
-            <span className="tab-label">{file.name}</span>
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label={`Close ${file.name}`}
-              className="tab-close"
-              onClick={(event) => {
-                event.stopPropagation();
-                onCloseTab(file.id);
+          return (
+            <button
+              key={file.id}
+              type="button"
+              role="tab"
+              draggable
+              aria-selected={file.id === activeFileId}
+              className={clsx(
+                "tab",
+                file.id === activeFileId && "active",
+                file.id === previewTabId && "preview",
+                file.id === draggedFileId && "dragging",
+                modified && "modified",
+                dropIndicator?.fileId === file.id &&
+                  (dropIndicator.side === "before" ? "drop-before" : "drop-after"),
+              )}
+              onPointerDown={() => onSelectTab(file.id)}
+              onClick={() => onSelectTab(file.id)}
+              onDoubleClick={() => onPinTab(file.id)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setContextMenu({ fileId: file.id, x: event.clientX, y: event.clientY });
               }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onCloseTab(file.id);
+              onDragStart={(event) => {
+                setDraggedFileId(file.id);
+                setContextMenu(null);
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", file.id);
+
+                const dragPreview = event.currentTarget.cloneNode(true) as HTMLElement;
+                dragPreview.classList.add("tab-drag-preview");
+                event.currentTarget.ownerDocument.body.append(dragPreview);
+                event.dataTransfer.setDragImage(dragPreview, 0, 0);
+
+                requestAnimationFrame(() => {
+                  dragPreview.remove();
+                });
+              }}
+              onDragEnd={() => {
+                setDraggedFileId(null);
+                setDropIndicator(null);
+              }}
+              onDragOver={(event) => {
+                if (!draggedFileId || draggedFileId === file.id) {
+                  return;
                 }
+
+                event.preventDefault();
+
+                const rect = event.currentTarget.getBoundingClientRect();
+                const side = event.clientX < rect.left + rect.width / 2 ? "before" : "after";
+                const targetIndex = side === "before" ? index : index + 1;
+
+                setDropIndicator({ fileId: file.id, side, targetIndex });
               }}
             >
-              <X size={13} />
-            </span>
-          </button>
-        ))}
+              <SetiFileIcon fileName={file.name} />
+              <span className="tab-label">{file.name}</span>
+              {modified ? <span className="tab-status">M</span> : null}
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={`Close ${file.name}`}
+                className="tab-close"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCloseTab(file.id);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onCloseTab(file.id);
+                  }
+                }}
+              >
+                <X size={13} />
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {contextMenu && contextFile ? (

@@ -45,6 +45,13 @@ const readmeFile: WorkspaceFile = {
 describe("workspaceReducer", () => {
   const readmeId = "repo:content/README.md";
 
+  it("defaults markdown files to preview mode and code files to code mode", () => {
+    const state = createInitialWorkspaceState([readmeFile, repoFile]);
+
+    expect(state.editorModes[readmeId]).toBe("preview");
+    expect(state.editorModes[repoFile.id]).toBe("code");
+  });
+
   it("single-click opens files as a preview tab and replaces the existing preview", () => {
     const state = createInitialWorkspaceState([readmeFile, repoFile]);
     const next = workspaceReducer(state, { type: "openFile", fileId: repoFile.id });

@@ -10,7 +10,10 @@ export function createInitialWorkspaceState(
   const files = repoFiles;
   const filesById = Object.fromEntries(files.map((file) => [file.id, file]));
   const editorModes = Object.fromEntries(
-    files.map((file): [string, EditorMode] => [file.id, "code"]),
+    files.map((file): [string, EditorMode] => [
+      file.id,
+      file.renderer === "markdown" ? "preview" : "code",
+    ]),
   );
 
   return {

@@ -12,16 +12,19 @@ import {
 } from "react";
 import { ActivityBar, type ActivityView } from "./ActivityBar";
 import { CommandPalette, type CommandPaletteCommand } from "./CommandPalette";
-import { CommandPaletteHint } from "./CommandPaletteHint";
 import { EditorPane } from "./EditorPane";
 import { FileExplorer } from "./FileExplorer";
 import { QuickOpen } from "./QuickOpen";
 import { SearchPanel } from "./SearchPanel";
+import { SourceControlPanel } from "./SourceControlPanel";
 import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
+import { gitCurrentBranch, gitHistoryCommits } from "@generated/gitHistory";
 import type {
+  EditorCursorPosition,
   EditorFoldRange,
   EditorRevealRequest,
+  EditorSerializedState,
   EditorScrollPosition,
 } from "@/features/editor/CodeEditor";
 import {
@@ -53,7 +56,9 @@ export function WorkspaceShell() {
   const [quickOpenVisible, setQuickOpenVisible] = useState(false);
   const [commandPaletteVisible, setCommandPaletteVisible] = useState(false);
   const scrollPositionsRef = useRef<Record<string, EditorScrollPosition>>({});
+  const editorStatesRef = useRef<Record<string, EditorSerializedState>>({});
   const foldRangesRef = useRef<Record<string, EditorFoldRange[]>>({});
+  const [cursorPositions, setCursorPositions] = useState<Record<string, EditorCursorPosition>>({});
   const resizeHoverTimerRef = useRef<number | null>(null);
 
   const activeFile = state.filesById[state.activeFileId];
@@ -62,6 +67,14 @@ export function WorkspaceShell() {
     ...file,
     currentContent: getFileContent(state, file.id),
   }));
+  const changedFiles = files.filter(
+    (file) => file.editable && state.editedContents[file.id] !== undefined &&
+      state.editedContents[file.id] !== file.content,
+  );
+  const modifiedFileIds = useMemo(
+    () => new Set(changedFiles.map((file) => file.id)),
+    [changedFiles],
+  );
   const openTabs = state.openTabs.map((fileId) => state.filesById[fileId]).filter(Boolean);
   const mode = state.editorModes[activeFile.id] ?? "code";
   const content = getFileContent(state, activeFile.id);
@@ -101,22 +114,38 @@ export function WorkspaceShell() {
         run: () => openPinnedFile("repo:content/README.md"),
       },
       {
-        id: "file.open-roadmap",
-        label: "File: Open Roadmap",
-        detail: "content/roadmap.md",
-        run: () => openPinnedFile("repo:content/roadmap.md"),
+        id: "file.open-projects",
+        label: "File: Open Projects",
+        detail: "content/PROJECTS.md",
+        run: () => openPinnedFile("repo:content/PROJECTS.md"),
       },
       {
-        id: "file.open-contributing",
-        label: "File: Open Contributing Guide",
-        detail: "content/contributing.md",
-        run: () => openPinnedFile("repo:content/contributing.md"),
+        id: "file.open-about",
+        label: "File: Open About",
+        detail: "content/ABOUT.md",
+        run: () => openPinnedFile("repo:content/ABOUT.md"),
+      },
+      {
+        id: "file.open-contact",
+        label: "File: Open Contact",
+        detail: "content/CONTACT.md",
+        run: () => openPinnedFile("repo:content/CONTACT.md"),
+      },
+      {
+        id: "file.open-website",
+        label: "File: Open Website",
+        detail: "content/WEBSITE.md",
+        run: () => openPinnedFile("repo:content/WEBSITE.md"),
       },
     ],
     [openPinnedFile],
   );
   const getScrollPosition = useCallback(
     (fileId: string) => scrollPositionsRef.current[fileId] ?? { left: 0, top: 0 },
+    [],
+  );
+  const getEditorState = useCallback(
+    (fileId: string) => editorStatesRef.current[fileId] ?? null,
     [],
   );
   const getFoldRanges = useCallback((fileId: string) => foldRangesRef.current[fileId] ?? [], []);
@@ -133,7 +162,7 @@ export function WorkspaceShell() {
     resizeHoverTimerRef.current = window.setTimeout(() => {
       setIsResizeHandleHoverActive(true);
       resizeHoverTimerRef.current = null;
-    }, 500);
+    }, 350);
   }, [clearResizeHoverTimer]);
   const hideResizeHover = useCallback(() => {
     clearResizeHoverTimer();
@@ -217,13 +246,13 @@ export function WorkspaceShell() {
           <span className="traffic traffic-maximize" />
         </div>
         <div className="window-title">Experimental Software Studio - landing-page</div>
-        <CommandPaletteHint onOpen={() => setQuickOpenVisible(true)} />
       </header>
 
       <div className="workspace-grid">
         <ActivityBar
           activeView={activeActivityView}
           sidebarVisible={sidebarVisible}
+          sourceControlCount={changedFiles.length}
           onSelectView={selectActivityView}
         />
         {sidebarVisible ? (
@@ -232,15 +261,24 @@ export function WorkspaceShell() {
               <FileExplorer
                 tree={state.tree}
                 activeFileId={state.activeFileId}
+                modifiedFileIds={modifiedFileIds}
                 onSelectFile={(fileId) => dispatch({ type: "openFile", fileId })}
                 onPinFile={(fileId) => dispatch({ type: "pinFile", fileId })}
               />
-            ) : (
+            ) : activeActivityView === "search" ? (
               <SearchPanel
                 files={searchableFiles}
                 query={searchQuery}
                 onQueryChange={setSearchQuery}
                 onOpenMatch={openSearchMatch}
+              />
+            ) : (
+              <SourceControlPanel
+                changedFiles={changedFiles}
+                commits={gitHistoryCommits}
+                branchName={gitCurrentBranch}
+                githubUrl={githubRepoUrl}
+                onOpenFile={(fileId) => dispatch({ type: "openFile", fileId })}
               />
             )}
             <div
@@ -276,6 +314,7 @@ export function WorkspaceShell() {
             tabs={openTabs}
             activeFileId={state.activeFileId}
             previewTabId={state.previewTabId}
+            modifiedFileIds={modifiedFileIds}
             onSelectTab={(fileId) => dispatch({ type: "openFile", fileId })}
             onPinTab={(fileId) => dispatch({ type: "pinFile", fileId })}
             onCloseTab={(fileId) => dispatch({ type: "closeTab", fileId })}
@@ -299,13 +338,25 @@ export function WorkspaceShell() {
                 content: nextContent,
               })
             }
+            getEditorState={getEditorState}
             getScrollPosition={getScrollPosition}
+            onEditorStateChange={(fileId, editorState) => {
+              editorStatesRef.current[fileId] = editorState;
+            }}
             onScrollPositionChange={(fileId, position) => {
               scrollPositionsRef.current[fileId] = position;
             }}
             getFoldRanges={getFoldRanges}
             onFoldRangesChange={(fileId, ranges) => {
               foldRangesRef.current[fileId] = ranges;
+            }}
+            onCursorPositionChange={(fileId, position) => {
+              setCursorPositions((current) =>
+                current[fileId]?.line === position.line &&
+                current[fileId]?.column === position.column
+                  ? current
+                  : { ...current, [fileId]: position },
+              );
             }}
             revealRequest={revealRequest}
           />
@@ -328,7 +379,10 @@ export function WorkspaceShell() {
         />
       ) : null}
 
-      <StatusBar file={activeFile} mode={mode} openCount={openTabs.length} />
+      <StatusBar
+        file={activeFile}
+        cursorPosition={cursorPositions[activeFile.id]}
+      />
     </main>
   );
 }
