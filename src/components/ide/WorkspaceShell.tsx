@@ -10,15 +10,20 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ActivityBar } from "./ActivityBar";
+import { ActivityBar, type ActivityView } from "./ActivityBar";
 import { CommandPalette, type CommandPaletteCommand } from "./CommandPalette";
 import { CommandPaletteHint } from "./CommandPaletteHint";
 import { EditorPane } from "./EditorPane";
 import { FileExplorer } from "./FileExplorer";
 import { QuickOpen } from "./QuickOpen";
+import { SearchPanel } from "./SearchPanel";
 import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
-import type { EditorFoldRange, EditorScrollPosition } from "@/features/editor/CodeEditor";
+import type {
+  EditorFoldRange,
+  EditorRevealRequest,
+  EditorScrollPosition,
+} from "@/features/editor/CodeEditor";
 import {
   createInitialWorkspaceState,
   getFileContent,
@@ -40,6 +45,10 @@ export function WorkspaceShell() {
     createInitialWorkspaceState(),
   );
   const [explorerWidth, setExplorerWidth] = useState(defaultExplorerWidth);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [activeActivityView, setActiveActivityView] = useState<ActivityView>("explorer");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [revealRequest, setRevealRequest] = useState<EditorRevealRequest | null>(null);
   const [isResizeHandleHoverActive, setIsResizeHandleHoverActive] = useState(false);
   const [quickOpenVisible, setQuickOpenVisible] = useState(false);
   const [commandPaletteVisible, setCommandPaletteVisible] = useState(false);
@@ -49,12 +58,28 @@ export function WorkspaceShell() {
 
   const activeFile = state.filesById[state.activeFileId];
   const files = Object.values(state.filesById);
+  const searchableFiles = files.map((file) => ({
+    ...file,
+    currentContent: getFileContent(state, file.id),
+  }));
   const openTabs = state.openTabs.map((fileId) => state.filesById[fileId]).filter(Boolean);
   const mode = state.editorModes[activeFile.id] ?? "code";
   const content = getFileContent(state, activeFile.id);
   const openPinnedFile = useCallback((fileId: string) => {
     dispatch({ type: "pinFile", fileId });
   }, []);
+  const openSearchMatch = useCallback(
+    (fileId: string, lineNumber: number) => {
+      dispatch({ type: "openFile", fileId });
+      dispatch({ type: "setMode", fileId, mode: "code" });
+      setRevealRequest({
+        fileId,
+        lineNumber,
+        nonce: Date.now(),
+      });
+    },
+    [],
+  );
   const commandPaletteCommands = useMemo<CommandPaletteCommand[]>(
     () => [
       {
@@ -143,6 +168,18 @@ export function WorkspaceShell() {
     window.addEventListener("pointerup", stopResize);
     window.addEventListener("pointercancel", stopResize);
   }, [clearResizeHoverTimer, explorerWidth]);
+  const selectActivityView = useCallback(
+    (view: ActivityView) => {
+      if (sidebarVisible && activeActivityView === view) {
+        setSidebarVisible(false);
+        return;
+      }
+
+      setActiveActivityView(view);
+      setSidebarVisible(true);
+    },
+    [activeActivityView, sidebarVisible],
+  );
 
   useEffect(() => {
     const openKeyboardPalette = (event: KeyboardEvent) => {
@@ -170,7 +207,7 @@ export function WorkspaceShell() {
 
   return (
     <main
-      className="ide-shell"
+      className={sidebarVisible ? "ide-shell" : "ide-shell explorer-collapsed"}
       style={{ "--explorer-width": `${explorerWidth}px` } as CSSProperties}
     >
       <header className="title-bar">
@@ -184,39 +221,56 @@ export function WorkspaceShell() {
       </header>
 
       <div className="workspace-grid">
-        <ActivityBar />
-        <FileExplorer
-          tree={state.tree}
-          activeFileId={state.activeFileId}
-          onSelectFile={(fileId) => dispatch({ type: "openFile", fileId })}
-          onPinFile={(fileId) => dispatch({ type: "pinFile", fileId })}
+        <ActivityBar
+          activeView={activeActivityView}
+          sidebarVisible={sidebarVisible}
+          onSelectView={selectActivityView}
         />
-        <div
-          className="explorer-resizer"
-          data-hover-active={isResizeHandleHoverActive}
-          role="separator"
-          aria-label="Resize explorer"
-          aria-orientation="vertical"
-          aria-valuemin={minExplorerWidth}
-          aria-valuemax={maxExplorerWidth}
-          aria-valuenow={explorerWidth}
-          tabIndex={0}
-          onPointerDown={startExplorerResize}
-          onPointerEnter={showResizeHoverAfterDelay}
-          onPointerLeave={hideResizeHover}
-          onBlur={hideResizeHover}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowLeft") {
-              event.preventDefault();
-              resizeExplorerBy(-resizeKeyboardStep);
-            }
+        {sidebarVisible ? (
+          <>
+            {activeActivityView === "explorer" ? (
+              <FileExplorer
+                tree={state.tree}
+                activeFileId={state.activeFileId}
+                onSelectFile={(fileId) => dispatch({ type: "openFile", fileId })}
+                onPinFile={(fileId) => dispatch({ type: "pinFile", fileId })}
+              />
+            ) : (
+              <SearchPanel
+                files={searchableFiles}
+                query={searchQuery}
+                onQueryChange={setSearchQuery}
+                onOpenMatch={openSearchMatch}
+              />
+            )}
+            <div
+              className="explorer-resizer"
+              data-hover-active={isResizeHandleHoverActive}
+              role="separator"
+              aria-label="Resize explorer"
+              aria-orientation="vertical"
+              aria-valuemin={minExplorerWidth}
+              aria-valuemax={maxExplorerWidth}
+              aria-valuenow={explorerWidth}
+              tabIndex={0}
+              onPointerDown={startExplorerResize}
+              onPointerEnter={showResizeHoverAfterDelay}
+              onPointerLeave={hideResizeHover}
+              onBlur={hideResizeHover}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  resizeExplorerBy(-resizeKeyboardStep);
+                }
 
-            if (event.key === "ArrowRight") {
-              event.preventDefault();
-              resizeExplorerBy(resizeKeyboardStep);
-            }
-          }}
-        />
+                if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  resizeExplorerBy(resizeKeyboardStep);
+                }
+              }}
+            />
+          </>
+        ) : null}
         <div className="editor-workbench">
           <TabBar
             tabs={openTabs}
@@ -253,6 +307,7 @@ export function WorkspaceShell() {
             onFoldRangesChange={(fileId, ranges) => {
               foldRangesRef.current[fileId] = ranges;
             }}
+            revealRequest={revealRequest}
           />
         </div>
       </div>

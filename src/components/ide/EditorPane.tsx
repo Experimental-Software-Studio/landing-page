@@ -3,6 +3,7 @@
 import { ChevronRight, Eye, FileCode2, Lock } from "lucide-react";
 import {
   CodeEditor,
+  type EditorRevealRequest,
   type EditorFoldRange,
   type EditorScrollPosition,
 } from "@/features/editor/CodeEditor";
@@ -19,6 +20,7 @@ interface EditorPaneProps {
   onScrollPositionChange: (fileId: string, position: EditorScrollPosition) => void;
   getFoldRanges: (fileId: string) => EditorFoldRange[];
   onFoldRangesChange: (fileId: string, ranges: EditorFoldRange[]) => void;
+  revealRequest: EditorRevealRequest | null;
 }
 
 export function EditorPane({
@@ -31,6 +33,7 @@ export function EditorPane({
   onScrollPositionChange,
   getFoldRanges,
   onFoldRangesChange,
+  revealRequest,
 }: EditorPaneProps) {
   const canPreview = file.renderer === "markdown";
   const breadcrumbSegments = file.path.split("/");
@@ -91,6 +94,7 @@ export function EditorPane({
             onScrollPositionChange={onScrollPositionChange}
             getFoldRanges={getFoldRanges}
             onFoldRangesChange={onFoldRangesChange}
+            revealRequest={revealRequest}
           />
         )}
       </div>

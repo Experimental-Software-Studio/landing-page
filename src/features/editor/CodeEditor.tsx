@@ -26,6 +26,7 @@ interface CodeEditorProps {
   onScrollPositionChange: (fileId: string, position: EditorScrollPosition) => void;
   getFoldRanges: (fileId: string) => EditorFoldRange[];
   onFoldRangesChange: (fileId: string, ranges: EditorFoldRange[]) => void;
+  revealRequest: EditorRevealRequest | null;
 }
 
 export interface EditorScrollPosition {
@@ -38,6 +39,12 @@ export interface EditorScrollPosition {
 export interface EditorFoldRange {
   from: number;
   to: number;
+}
+
+export interface EditorRevealRequest {
+  fileId: string;
+  lineNumber: number;
+  nonce: number;
 }
 
 const horizontalScrollTheme = EditorView.theme({
@@ -314,6 +321,7 @@ export function CodeEditor({
   onScrollPositionChange,
   getFoldRanges,
   onFoldRangesChange,
+  revealRequest,
 }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -327,6 +335,7 @@ export function CodeEditor({
   const suppressScrollSaveRef = useRef(false);
   const suppressFoldSaveRef = useRef(false);
   const suppressChangeRef = useRef(false);
+  const lastRevealNonceRef = useRef<number | null>(null);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -470,6 +479,43 @@ export function CodeEditor({
   useLayoutEffect(() => {
     const view = viewRef.current;
 
+    if (!view || !revealRequest || revealRequest.fileId !== fileId) {
+      return;
+    }
+
+    if (lastRevealNonceRef.current === revealRequest.nonce) {
+      return;
+    }
+
+    lastRevealNonceRef.current = revealRequest.nonce;
+
+    const lineNumber = Math.min(Math.max(1, revealRequest.lineNumber), view.state.doc.lines);
+    const line = view.state.doc.line(lineNumber);
+
+    suppressScrollSaveRef.current = true;
+    view.dispatch({
+      selection: { anchor: line.from },
+      effects: EditorView.scrollIntoView(line.from, {
+        y: "center",
+      }),
+    });
+
+    requestAnimationFrame(() => {
+      view.dispatch({
+        selection: { anchor: line.from },
+        effects: EditorView.scrollIntoView(line.from, {
+          y: "center",
+        }),
+      });
+      view.focus();
+      onScrollPositionChangeRef.current(fileId, getEditorScrollPosition(view));
+      suppressScrollSaveRef.current = false;
+    });
+  }, [fileId, revealRequest]);
+
+  useLayoutEffect(() => {
+    const view = viewRef.current;
+
     if (!view) {
       return;
     }
@@ -493,6 +539,11 @@ export function CodeEditor({
       return;
     }
 
+    if (revealRequest?.fileId === fileId) {
+      suppressScrollSaveRef.current = false;
+      return;
+    }
+
     const nextPosition = getScrollPositionRef.current(fileId);
 
     suppressScrollSaveRef.current = true;
@@ -506,7 +557,7 @@ export function CodeEditor({
     return () => {
       window.clearTimeout(releaseTimer);
     };
-  }, [fileId]);
+  }, [fileId, revealRequest]);
 
   return <div ref={containerRef} className="editor-host" data-testid="code-editor" />;
 }
