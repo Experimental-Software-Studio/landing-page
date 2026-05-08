@@ -157,7 +157,6 @@ button {
   gap: 4px;
   padding-top: 8px;
   background: #333333;
-  border-right: 1px solid var(--border);
 }
 
 .activity-button {
@@ -189,7 +188,6 @@ button {
 .explorer {
   min-width: 0;
   overflow: auto;
-  border-right: 1px solid var(--border);
   background: var(--panel);
   color: #cccccc;
 }
@@ -271,8 +269,7 @@ button {
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--border);
-  background: var(--panel-2);
+  background: var(--panel);
   user-select: none;
 }
 
@@ -290,7 +287,7 @@ button {
   padding: 0 9px 0 12px;
   border: 0;
   border-top: 1px solid transparent;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--bg);
   background: #2d2d2d;
   color: #bdbdbd;
   cursor: pointer;
@@ -405,7 +402,6 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding: 0 14px;
-  border-bottom: 1px solid #303030;
   background: var(--bg);
 }
 

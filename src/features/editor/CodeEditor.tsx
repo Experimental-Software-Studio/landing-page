@@ -2,7 +2,13 @@
 
 import { foldEffect, foldGutter, foldedRanges, unfoldEffect } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
-import { EditorView, lineNumbers } from "@codemirror/view";
+import {
+  EditorView,
+  ViewPlugin,
+  highlightActiveLineGutter,
+  lineNumbers,
+  type ViewUpdate,
+} from "@codemirror/view";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import { useEffect, useLayoutEffect, useRef } from "react";
@@ -41,7 +47,139 @@ const horizontalScrollTheme = EditorView.theme({
   },
 });
 
+const activeLineTheme = EditorView.theme({
+  "&": {
+    position: "relative",
+  },
+  ".cm-activeVisualLine": {
+    position: "absolute",
+    zIndex: "1",
+    pointerEvents: "none",
+    boxShadow:
+      "inset 0 2px 0 rgb(255 255 255 / 0.055), inset 0 -2px 0 rgb(255 255 255 / 0.055)",
+  },
+  ".cm-activeLineGutter": {
+    backgroundColor: "transparent !important",
+    color: "#999999",
+  },
+});
+
 const restoreScrollMeasureKey = {};
+const activeVisualLineMeasureKey = {};
+const scrollBeyondLastLineExtraPx = 1;
+
+interface ActiveVisualLineMeasure {
+  height: number;
+  left: number;
+  top: number;
+  width: number;
+}
+
+const activeVisualLine = ViewPlugin.fromClass(
+  class {
+    private readonly marker: HTMLDivElement;
+
+    constructor(private readonly view: EditorView) {
+      this.marker = document.createElement("div");
+      this.marker.className = "cm-activeVisualLine";
+      this.marker.style.display = "none";
+      this.view.dom.append(this.marker);
+      this.view.scrollDOM.addEventListener("scroll", this.scheduleMeasure, { passive: true });
+      this.scheduleMeasure();
+    }
+
+    update(update: ViewUpdate) {
+      if (
+        update.selectionSet ||
+        update.docChanged ||
+        update.viewportChanged ||
+        update.geometryChanged
+      ) {
+        this.scheduleMeasure();
+      }
+    }
+
+    destroy() {
+      this.view.scrollDOM.removeEventListener("scroll", this.scheduleMeasure);
+      this.marker.remove();
+    }
+
+    private readonly scheduleMeasure = () => {
+      this.view.requestMeasure({
+        key: activeVisualLineMeasureKey,
+        read: (view) => {
+          const cursor = view.state.selection.main.head;
+          const cursorRect = view.coordsAtPos(cursor);
+
+          if (!cursorRect) {
+            return null;
+          }
+
+          const editorRect = view.dom.getBoundingClientRect();
+          const contentRect = view.contentDOM.getBoundingClientRect();
+          const scrollRect = view.scrollDOM.getBoundingClientRect();
+          const contentLeft = contentRect.left - editorRect.left;
+          const contentRight = scrollRect.left - editorRect.left + view.scrollDOM.clientWidth;
+
+          return {
+            height: Math.max(cursorRect.bottom - cursorRect.top, view.defaultLineHeight),
+            left: contentLeft,
+            top: cursorRect.top - editorRect.top,
+            width: Math.max(0, contentRight - contentLeft),
+          };
+        },
+        write: (measure) => {
+          if (!measure) {
+            this.marker.style.display = "none";
+            return;
+          }
+
+          this.marker.style.display = "block";
+          this.marker.style.left = `${measure.left}px`;
+          this.marker.style.top = `${measure.top}px`;
+          this.marker.style.width = `${measure.width}px`;
+          this.marker.style.height = `${measure.height}px`;
+        },
+      });
+    };
+  },
+);
+
+const scrollBeyondLastLine = ViewPlugin.fromClass(
+  class {
+    private height = -1;
+
+    constructor(private readonly view: EditorView) {
+      this.updateBottomPadding();
+    }
+
+    update() {
+      this.updateBottomPadding();
+    }
+
+    destroy() {
+      this.view.contentDOM.style.paddingBottom = "";
+    }
+
+    private updateBottomPadding() {
+      const lastLine = this.view.lineBlockAt(this.view.state.doc.length);
+      const height = Math.max(
+        0,
+        this.view.scrollDOM.clientHeight -
+          lastLine.height -
+          this.view.documentPadding.top +
+          scrollBeyondLastLineExtraPx,
+      );
+
+      if (height === this.height) {
+        return;
+      }
+
+      this.height = height;
+      this.view.contentDOM.style.paddingBottom = `${height}px`;
+    }
+  },
+);
 
 const foldingTheme = EditorView.baseTheme({
   ".cm-foldGutter": {
@@ -180,6 +318,7 @@ export function CodeEditor({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
+  const valueRef = useRef(value);
   const getScrollPositionRef = useRef(getScrollPosition);
   const onScrollPositionChangeRef = useRef(onScrollPositionChange);
   const getFoldRangesRef = useRef(getFoldRanges);
@@ -192,6 +331,10 @@ export function CodeEditor({
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useLayoutEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   useEffect(() => {
     getScrollPositionRef.current = getScrollPosition;
@@ -228,12 +371,15 @@ export function CodeEditor({
       return;
     }
 
+    container.ownerDocument.getSelection()?.removeAllRanges();
+
     const view = new EditorView({
       parent: container,
       state: EditorState.create({
-        doc: "",
+        doc: valueRef.current,
         extensions: [
           lineNumbers(),
+          highlightActiveLineGutter(),
           foldGutter({
             markerDOM: foldMarker,
           }),
@@ -249,11 +395,14 @@ export function CodeEditor({
               activeDark: "#707070",
             },
           }),
+          activeVisualLine,
+          activeLineTheme,
           language === "markdown" ? [] : bracketPairColors(),
           getCodeMirrorLanguage(language),
           EditorState.readOnly.of(readOnly),
           EditorView.editable.of(!readOnly),
           language === "markdown" ? EditorView.lineWrapping : horizontalScrollTheme,
+          scrollBeyondLastLine,
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !readOnly && !suppressChangeRef.current) {
               onChangeRef.current(update.state.doc.toString());
