@@ -99,6 +99,8 @@ describe("workspaceReducer", () => {
     });
 
     expect(getFileContent(next, readmeId)).toBe("# Changed");
+    expect(next.openTabs).toEqual([readmeId]);
+    expect(next.previewTabId).toBeNull();
   });
 
   it("blocks edits to read-only repo files", () => {

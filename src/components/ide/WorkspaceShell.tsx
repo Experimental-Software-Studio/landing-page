@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -7,6 +8,7 @@ import {
   useReducer,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -32,6 +34,7 @@ import {
   getFileContent,
   workspaceReducer,
 } from "@/features/workspace/workspace";
+import { contentRouteForFileId, contentRouteForSlug } from "@/features/workspace/contentRoutes";
 
 const defaultExplorerWidth = 288;
 const minExplorerWidth = 168;
@@ -43,9 +46,31 @@ function clampExplorerWidth(width: number) {
   return Math.min(maxExplorerWidth, Math.max(minExplorerWidth, width));
 }
 
-export function WorkspaceShell() {
+function subscribeToPathnameChanges(onStoreChange: () => void) {
+  window.addEventListener("popstate", onStoreChange);
+
+  return () => {
+    window.removeEventListener("popstate", onStoreChange);
+  };
+}
+
+function getBrowserPathname() {
+  return window.location.pathname;
+}
+
+interface WorkspaceShellProps {
+  initialFileId?: string;
+}
+
+export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
+  const initialPathname = usePathname();
+  const pathname = useSyncExternalStore(
+    subscribeToPathnameChanges,
+    getBrowserPathname,
+    () => initialPathname,
+  );
   const [state, dispatch] = useReducer(workspaceReducer, undefined, () =>
-    createInitialWorkspaceState(),
+    createInitialWorkspaceState(undefined, initialFileId),
   );
   const [explorerWidth, setExplorerWidth] = useState(defaultExplorerWidth);
   const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -58,6 +83,7 @@ export function WorkspaceShell() {
   const scrollPositionsRef = useRef<Record<string, EditorScrollPosition>>({});
   const editorStatesRef = useRef<Record<string, EditorSerializedState>>({});
   const foldRangesRef = useRef<Record<string, EditorFoldRange[]>>({});
+  const lastHandledPathnameRef = useRef(pathname);
   const [cursorPositions, setCursorPositions] = useState<Record<string, EditorCursorPosition>>({});
   const resizeHoverTimerRef = useRef<number | null>(null);
 
@@ -209,6 +235,32 @@ export function WorkspaceShell() {
     },
     [activeActivityView, sidebarVisible],
   );
+
+  useEffect(() => {
+    if (lastHandledPathnameRef.current === pathname) {
+      return;
+    }
+
+    lastHandledPathnameRef.current = pathname;
+    const route = contentRouteForSlug(pathname.replace(/^\/+/, ""));
+
+    if (!route || route.fileId === state.activeFileId) {
+      return;
+    }
+
+    dispatch({ type: "openFile", fileId: route.fileId });
+  }, [pathname, state.activeFileId]);
+
+  useEffect(() => {
+    const route = contentRouteForFileId(state.activeFileId);
+
+    if (!route || route.route === pathname) {
+      return;
+    }
+
+    window.history.pushState(null, "", route.route);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, [pathname, state.activeFileId]);
 
   useEffect(() => {
     const openKeyboardPalette = (event: KeyboardEvent) => {

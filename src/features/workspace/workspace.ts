@@ -6,9 +6,11 @@ export const defaultFileId = "repo:content/README.md";
 
 export function createInitialWorkspaceState(
   repoFiles: WorkspaceFile[] = repoMirrorFiles,
+  initialFileId: string = defaultFileId,
 ): WorkspaceState {
   const files = repoFiles;
   const filesById = Object.fromEntries(files.map((file) => [file.id, file]));
+  const activeFileId = filesById[initialFileId] ? initialFileId : defaultFileId;
   const editorModes = Object.fromEntries(
     files.map((file): [string, EditorMode] => [
       file.id,
@@ -19,9 +21,9 @@ export function createInitialWorkspaceState(
   return {
     tree: buildWorkspaceTree(files),
     filesById,
-    openTabs: [defaultFileId],
-    previewTabId: defaultFileId,
-    activeFileId: defaultFileId,
+    openTabs: [activeFileId],
+    previewTabId: activeFileId,
+    activeFileId,
     editorModes,
     editedContents: {},
   };
@@ -170,6 +172,10 @@ export function workspaceReducer(
 
       return {
         ...state,
+        openTabs: state.openTabs.includes(action.fileId)
+          ? state.openTabs
+          : [...state.openTabs, action.fileId],
+        previewTabId: state.previewTabId === action.fileId ? null : state.previewTabId,
         editedContents: {
           ...state.editedContents,
           [action.fileId]: action.content,

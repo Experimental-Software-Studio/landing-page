@@ -6,10 +6,10 @@ _Founded and run by Alexander Chen._
 
 ## Start here
 
-- [Projects](./PROJECTS.md)
-- [Website](./WEBSITE.md)
-- [About](./ABOUT.md)
-- [Contact](./CONTACT.md)
+- [Projects](/projects)
+- [Website](/website)
+- [About](/about)
+- [Contact](/contact)
 
 ## Featured projects
 
