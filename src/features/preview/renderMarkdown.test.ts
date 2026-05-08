@@ -33,6 +33,27 @@ const value = 1;
     expect(html).toContain("<li>First</li>");
   });
 
+  it("opens external links in a new tab", () => {
+    const html = renderMarkdown(
+      `[External](https://example.com) and [Email](mailto:hello@example.com)`,
+    );
+
+    expect(html).toContain(
+      '<a href="https://example.com" target="_blank" rel="noopener noreferrer">External</a>',
+    );
+    expect(html).toContain(
+      '<a href="mailto:hello@example.com" target="_blank" rel="noopener noreferrer">Email</a>',
+    );
+  });
+
+  it("keeps internal links in the same tab", () => {
+    const html = renderMarkdown(`[Projects](/projects) and [Section](#section)`);
+
+    expect(html).toContain('<a href="/projects">Projects</a>');
+    expect(html).toContain('<a href="#section">Section</a>');
+    expect(html).not.toContain('target="_blank"');
+  });
+
   it("sanitizes unsafe HTML", () => {
     const html = renderMarkdown(`<script>alert("x")</script>
 
