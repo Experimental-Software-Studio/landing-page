@@ -83,6 +83,7 @@ button {
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr) 23px;
   height: 100vh;
+  height: 100dvh;
   min-height: 520px;
   overflow: hidden;
   background: var(--bg);
@@ -1382,6 +1383,7 @@ button {
 @media (max-width: 820px) {
   .ide-shell {
     grid-template-rows: 34px minmax(0, 1fr) 25px;
+    min-height: 0;
   }
 
   .title-bar {
