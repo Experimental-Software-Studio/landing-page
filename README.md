@@ -50,13 +50,7 @@ Markdown preview rendering lives in `src/features/preview` and uses a unified re
 
 Website copy lives in `content/`.
 
-These files are part of the real repo and are also editable during a browser session:
-
-- `content/README.md`
-- `content/PROJECTS.md`
-- `content/WEBSITE.md`
-- `content/ABOUT.md`
-- `content/CONTACT.md`
+The mirrored text and code files are editable during a browser session, including the markdown files that power the public website content. Image files are preview-only because the app does not include image editing tools.
 
 Edits are stored only in React state. Refreshing the page resets the session.
 

@@ -2,7 +2,7 @@
 
 This website is a VS Code emulator acting as a landing page for Experimental Software.
 
-The codebase shown in this VS Code emulator is the code for the website itself. You can view the markdown files that power the website content. You can also edit those markdown files and the website will update.
+The codebase shown in this VS Code emulator is the code for the website itself. You can view and session-edit the mirrored text and code files, including the markdown files that power the website content.
 
 Play around with your favorite VS Code features: click buttons, press shortcuts, drag panels around. Hopefully they are already supported.
 

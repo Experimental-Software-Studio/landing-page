@@ -10,7 +10,7 @@ import { shouldMirrorRepoPath } from "./repoMirrorFilter";
 
 const outputPath = "generated/repoMirror.ts";
 const gitHistoryOutputPath = "generated/gitHistory.ts";
-const editableMarkdownPaths = new Set([
+const contentMarkdownPaths = new Set([
   "README.md",
   "content/README.md",
   "content/PROJECTS.md",
@@ -134,6 +134,7 @@ function historyRefForBranch(branch: string) {
 const mirroredFiles = gitFiles().map((path) => {
   const extension = extname(path).slice(1);
   const language = getLanguageForPath(path);
+  const editable = language !== "image";
 
   return {
     id: fileId(path),
@@ -142,8 +143,8 @@ const mirroredFiles = gitFiles().map((path) => {
     extension,
     language,
     renderer: getRendererForPath(path),
-    editable: editableMarkdownPaths.has(path),
-    source: editableMarkdownPaths.has(path) ? "content" : "repo",
+    editable,
+    source: contentMarkdownPaths.has(path) ? "content" : "repo",
     content: contentForPath(path, language, extension),
   };
 });
