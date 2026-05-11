@@ -34,7 +34,11 @@ import {
   getFileContent,
   workspaceReducer,
 } from "@/features/workspace/workspace";
-import { contentRouteForFileId, contentRouteForSlug } from "@/features/workspace/contentRoutes";
+import {
+  contentRouteForFileId,
+  contentRouteForSlug,
+  mainContentFileIds,
+} from "@/features/workspace/contentRoutes";
 
 const defaultExplorerWidth = 288;
 const minExplorerWidth = 168;
@@ -72,7 +76,9 @@ export function WorkspaceShell({ initialFileId }: WorkspaceShellProps) {
     () => initialPathname,
   );
   const [state, dispatch] = useReducer(workspaceReducer, undefined, () =>
-    createInitialWorkspaceState(undefined, initialFileId),
+    createInitialWorkspaceState(undefined, initialFileId, {
+      initialOpenFileIds: mainContentFileIds,
+    }),
   );
   const [explorerWidth, setExplorerWidth] = useState(defaultExplorerWidth);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>("auto");
