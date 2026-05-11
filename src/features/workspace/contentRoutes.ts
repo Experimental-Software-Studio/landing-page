@@ -36,6 +36,8 @@ export const contentPageRoutes = [
   },
 ] as const;
 
+export const mainContentFileIds = contentPageRoutes.map((route) => route.fileId);
+
 export function contentRouteForFileId(fileId: string) {
   return contentPageRoutes.find((route) => route.fileId === fileId) ?? null;
 }

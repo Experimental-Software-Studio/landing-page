@@ -42,6 +42,30 @@ const readmeFile: WorkspaceFile = {
   language: "markdown",
 };
 
+const projectsFile: WorkspaceFile = {
+  id: "repo:content/PROJECTS.md",
+  path: "content/PROJECTS.md",
+  name: "PROJECTS.md",
+  extension: "md",
+  content: "# Projects",
+  editable: true,
+  source: "content",
+  renderer: "markdown",
+  language: "markdown",
+};
+
+const aboutFile: WorkspaceFile = {
+  id: "repo:content/ABOUT.md",
+  path: "content/ABOUT.md",
+  name: "ABOUT.md",
+  extension: "md",
+  content: "# About",
+  editable: true,
+  source: "content",
+  renderer: "markdown",
+  language: "markdown",
+};
+
 describe("workspaceReducer", () => {
   const readmeId = "repo:content/README.md";
 
@@ -50,6 +74,50 @@ describe("workspaceReducer", () => {
 
     expect(state.editorModes[readmeId]).toBe("preview");
     expect(state.editorModes[repoFile.id]).toBe("code");
+  });
+
+  it("can initialize with a pinned tab set while focusing the requested file", () => {
+    const state = createInitialWorkspaceState(
+      [readmeFile, projectsFile, aboutFile],
+      aboutFile.id,
+      {
+        initialOpenFileIds: [readmeId, projectsFile.id, aboutFile.id],
+      },
+    );
+
+    expect(state.openTabs).toEqual([readmeId, projectsFile.id, aboutFile.id]);
+    expect(state.activeFileId).toBe(aboutFile.id);
+    expect(state.previewTabId).toBeNull();
+  });
+
+  it("keeps normal preview behavior after the initialized tab set is closed", () => {
+    const initialized = createInitialWorkspaceState(
+      [readmeFile, projectsFile, aboutFile],
+      aboutFile.id,
+      {
+        initialOpenFileIds: [readmeId, projectsFile.id, aboutFile.id],
+      },
+    );
+    const withoutAbout = workspaceReducer(initialized, {
+      type: "closeTab",
+      fileId: aboutFile.id,
+    });
+    const withoutProjects = workspaceReducer(withoutAbout, {
+      type: "closeTab",
+      fileId: projectsFile.id,
+    });
+    const withoutReadme = workspaceReducer(withoutProjects, {
+      type: "closeTab",
+      fileId: readmeId,
+    });
+    const reopened = workspaceReducer(withoutReadme, {
+      type: "openFile",
+      fileId: aboutFile.id,
+    });
+
+    expect(reopened.openTabs).toEqual([aboutFile.id]);
+    expect(reopened.activeFileId).toBe(aboutFile.id);
+    expect(reopened.previewTabId).toBe(aboutFile.id);
   });
 
   it("single-click opens files as a preview tab and replaces the existing preview", () => {

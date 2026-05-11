@@ -4,13 +4,25 @@ import type { EditorMode, WorkspaceAction, WorkspaceFile, WorkspaceState } from 
 
 export const defaultFileId = "repo:content/README.md";
 
+interface InitialWorkspaceStateOptions {
+  initialOpenFileIds?: string[];
+}
+
 export function createInitialWorkspaceState(
   repoFiles: WorkspaceFile[] = repoMirrorFiles,
   initialFileId: string = defaultFileId,
+  options: InitialWorkspaceStateOptions = {},
 ): WorkspaceState {
   const files = repoFiles;
   const filesById = Object.fromEntries(files.map((file) => [file.id, file]));
   const activeFileId = filesById[initialFileId] ? initialFileId : defaultFileId;
+  const initialOpenFileIds = options.initialOpenFileIds?.filter(
+    (fileId, index, fileIds) =>
+      Boolean(filesById[fileId]) && fileIds.indexOf(fileId) === index,
+  );
+  const openTabs = initialOpenFileIds?.length
+    ? initialOpenFileIds
+    : [activeFileId];
   const editorModes = Object.fromEntries(
     files.map((file): [string, EditorMode] => [
       file.id,
@@ -21,8 +33,8 @@ export function createInitialWorkspaceState(
   return {
     tree: buildWorkspaceTree(files),
     filesById,
-    openTabs: [activeFileId],
-    previewTabId: activeFileId,
+    openTabs: openTabs.includes(activeFileId) ? openTabs : [...openTabs, activeFileId],
+    previewTabId: openTabs.length === 1 && openTabs[0] === activeFileId ? activeFileId : null,
     activeFileId,
     editorModes,
     editedContents: {},
