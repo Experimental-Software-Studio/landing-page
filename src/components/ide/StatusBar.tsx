@@ -1,4 +1,4 @@
-import { GitBranch, Lock, Pencil } from "lucide-react";
+import { Eye, GitBranch, Pencil } from "lucide-react";
 import type { EditorCursorPosition } from "@/features/editor/CodeEditor";
 import type { WorkspaceFile } from "@/features/workspace/types";
 
@@ -60,8 +60,8 @@ export function StatusBar({ cursorPosition, file }: StatusBarProps) {
       <span className="status-item">UTF-8</span>
       <span className="status-item">{languageLabel(file)}</span>
       <span className="status-item">
-        {file.editable ? <Pencil size={14} /> : <Lock size={14} />}
-        {file.editable ? "Session edit" : "Read-only"}
+        {file.editable ? <Pencil size={14} /> : <Eye size={14} />}
+        {file.editable ? "Session edit" : "Preview-only"}
       </span>
     </footer>
   );

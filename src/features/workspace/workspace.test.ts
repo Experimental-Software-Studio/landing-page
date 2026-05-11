@@ -12,7 +12,7 @@ const repoFile: WorkspaceFile = {
   name: "page.tsx",
   extension: "tsx",
   content: "export default function Page() {}",
-  editable: false,
+  editable: true,
   source: "repo",
   renderer: "code",
   language: "typescript",
@@ -24,10 +24,22 @@ const configFile: WorkspaceFile = {
   name: "package.json",
   extension: "json",
   content: "{}",
-  editable: false,
+  editable: true,
   source: "repo",
   renderer: "code",
   language: "json",
+};
+
+const imageFile: WorkspaceFile = {
+  id: "repo:public/icon.png",
+  path: "public/icon.png",
+  name: "icon.png",
+  extension: "png",
+  content: "data:image/png;base64,abc",
+  editable: false,
+  source: "repo",
+  renderer: "image",
+  language: "image",
 };
 
 const readmeFile: WorkspaceFile = {
@@ -103,7 +115,7 @@ describe("workspaceReducer", () => {
     expect(next.previewTabId).toBeNull();
   });
 
-  it("blocks edits to read-only repo files", () => {
+  it("edits repo code files in memory", () => {
     const state = createInitialWorkspaceState([readmeFile, repoFile]);
     const next = workspaceReducer(state, {
       type: "updateContent",
@@ -111,7 +123,19 @@ describe("workspaceReducer", () => {
       content: "mutated",
     });
 
-    expect(getFileContent(next, repoFile.id)).toBe(repoFile.content);
+    expect(getFileContent(next, repoFile.id)).toBe("mutated");
+    expect(next.editedContents[repoFile.id]).toBe("mutated");
+  });
+
+  it("blocks edits to preview-only image files", () => {
+    const state = createInitialWorkspaceState([readmeFile, imageFile]);
+    const next = workspaceReducer(state, {
+      type: "updateContent",
+      fileId: imageFile.id,
+      content: "mutated",
+    });
+
+    expect(getFileContent(next, imageFile.id)).toBe(imageFile.content);
   });
 
   it("allows every tab to be closed", () => {

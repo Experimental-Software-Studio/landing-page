@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Eye, FileCode2, Lock } from "lucide-react";
+import { ChevronRight, Eye, FileCode2 } from "lucide-react";
 import {
   CodeEditor,
   type EditorCursorPosition,
@@ -81,10 +81,10 @@ export function EditorPane({
               </button>
             </>
           ) : null}
-          {!file.editable ? (
+          {isImage ? (
             <span className="readonly-pill">
-              <Lock size={14} />
-              Read-only mirror
+              <Eye size={14} />
+              Preview-only
             </span>
           ) : null}
         </div>
